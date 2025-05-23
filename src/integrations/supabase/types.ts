@@ -9,7 +9,95 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      meal_records: {
+        Row: {
+          created_at: string
+          group_type: Database["public"]["Enums"]["group_type"]
+          id: string
+          meal_date: string
+          meal_time: string
+          meal_type: Database["public"]["Enums"]["meal_type"]
+          user_id: string | null
+          user_name: string
+        }
+        Insert: {
+          created_at?: string
+          group_type: Database["public"]["Enums"]["group_type"]
+          id?: string
+          meal_date?: string
+          meal_time?: string
+          meal_type: Database["public"]["Enums"]["meal_type"]
+          user_id?: string | null
+          user_name: string
+        }
+        Update: {
+          created_at?: string
+          group_type?: Database["public"]["Enums"]["group_type"]
+          id?: string
+          meal_date?: string
+          meal_time?: string
+          meal_type?: Database["public"]["Enums"]["meal_type"]
+          user_id?: string | null
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_settings: {
+        Row: {
+          breakfast_deadline: string
+          id: string
+          lunch_deadline: string
+          updated_at: string
+        }
+        Insert: {
+          breakfast_deadline?: string
+          id?: string
+          lunch_deadline?: string
+          updated_at?: string
+        }
+        Update: {
+          breakfast_deadline?: string
+          id?: string
+          lunch_deadline?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          active: boolean
+          created_at: string
+          group_type: Database["public"]["Enums"]["group_type"]
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          group_type: Database["public"]["Enums"]["group_type"]
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          group_type?: Database["public"]["Enums"]["group_type"]
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +106,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      group_type: "operacao" | "projetos"
+      meal_type: "breakfast" | "lunch"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +222,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      group_type: ["operacao", "projetos"],
+      meal_type: ["breakfast", "lunch"],
+    },
   },
 } as const

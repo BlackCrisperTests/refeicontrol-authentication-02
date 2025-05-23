@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,29 +18,134 @@ import {
   Coffee,
   Utensils,
   Building2,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { User, MealRecord, GroupType } from '@/types/database.types';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [newUserName, setNewUserName] = useState('');
-  const [newUserGroup, setNewUserGroup] = useState('');
-  
-  // Mock data
-  const [users, setUsers] = useState([
-    { id: 1, name: 'João Silva', group: 'operacao' },
-    { id: 2, name: 'Maria Santos', group: 'operacao' },
-    { id: 3, name: 'Pedro Oliveira', group: 'projetos' },
-    { id: 4, name: 'Ana Costa', group: 'projetos' },
-  ]);
+  const [newUserGroup, setNewUserGroup] = useState<GroupType | ''>('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [mealRecords, setMealRecords] = useState<MealRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
 
-  const [mealRecords] = useState([
-    { id: 1, name: 'João Silva', group: 'operacao', mealType: 'breakfast', date: '2025-01-23', time: '08:30' },
-    { id: 2, name: 'Maria Santos', group: 'operacao', mealType: 'lunch', date: '2025-01-23', time: '12:15' },
-    { id: 3, name: 'Pedro Oliveira', group: 'projetos', mealType: 'breakfast', date: '2025-01-23', time: '08:45' },
-    { id: 4, name: 'Ana Costa', group: 'projetos', mealType: 'lunch', date: '2025-01-23', time: '13:00' },
-  ]);
+  // Stats
+  const [breakfastToday, setBreakfastToday] = useState(0);
+  const [lunchToday, setLunchToday] = useState(0);
+  const [operacaoToday, setOperacaoToday] = useState(0);
+  const [projetosToday, setProjetosToday] = useState(0);
+  
+  // Fetch users from Supabase
+  const fetchUsers = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: "Erro ao carregar usuários",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      setUsers(data as User[]);
+    }
+    setLoading(false);
+  };
+
+  // Fetch meal records from Supabase
+  const fetchMealRecords = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('meal_records')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching meal records:', error);
+      toast({
+        title: "Erro ao carregar registros",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      setMealRecords(data as MealRecord[]);
+    }
+    setLoading(false);
+  };
+
+  // Fetch today's stats
+  const fetchTodayStats = async () => {
+    setStatsLoading(true);
+    const today = new Date().toISOString().split('T')[0];
+    
+    try {
+      // Breakfast count
+      const { data: breakfastData, error: breakfastError } = await supabase
+        .from('meal_records')
+        .select('id')
+        .eq('meal_date', today)
+        .eq('meal_type', 'breakfast');
+        
+      if (breakfastError) throw breakfastError;
+      
+      // Lunch count
+      const { data: lunchData, error: lunchError } = await supabase
+        .from('meal_records')
+        .select('id')
+        .eq('meal_date', today)
+        .eq('meal_type', 'lunch');
+        
+      if (lunchError) throw lunchError;
+      
+      // Operacao count
+      const { data: operacaoData, error: operacaoError } = await supabase
+        .from('meal_records')
+        .select('id')
+        .eq('meal_date', today)
+        .eq('group_type', 'operacao');
+        
+      if (operacaoError) throw operacaoError;
+      
+      // Projetos count
+      const { data: projetosData, error: projetosError } = await supabase
+        .from('meal_records')
+        .select('id')
+        .eq('meal_date', today)
+        .eq('group_type', 'projetos');
+        
+      if (projetosError) throw projetosError;
+      
+      setBreakfastToday(breakfastData.length);
+      setLunchToday(lunchData.length);
+      setOperacaoToday(operacaoData.length);
+      setProjetosToday(projetosData.length);
+    } catch (error: any) {
+      console.error('Error fetching stats:', error);
+      toast({
+        title: "Erro ao carregar estatísticas",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchUsers();
+    fetchMealRecords();
+    fetchTodayStats();
+  }, []);
 
   const handleLogout = () => {
     toast({
@@ -50,7 +155,7 @@ const AdminDashboard = () => {
     navigate('/');
   };
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (!newUserName || !newUserGroup) {
       toast({
         title: "Erro",
@@ -60,38 +165,88 @@ const AdminDashboard = () => {
       return;
     }
 
-    const newUser = {
-      id: users.length + 1,
-      name: newUserName,
-      group: newUserGroup
-    };
-
-    setUsers([...users, newUser]);
-    setNewUserName('');
-    setNewUserGroup('');
+    setLoading(true);
     
-    toast({
-      title: "Usuário adicionado",
-      description: `${newUserName} foi adicionado com sucesso.`,
-    });
+    try {
+      // Check if user already exists
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('name', newUserName)
+        .eq('group_type', newUserGroup)
+        .maybeSingle();
+        
+      if (existingUser) {
+        toast({
+          title: "Usuário já existe",
+          description: `${newUserName} já está cadastrado no grupo ${newUserGroup === 'operacao' ? 'Operação' : 'Projetos'}.`,
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Add new user
+      const { error } = await supabase
+        .from('users')
+        .insert({
+          name: newUserName,
+          group_type: newUserGroup
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Usuário adicionado",
+        description: `${newUserName} foi adicionado com sucesso.`,
+      });
+
+      // Reset form and refresh users
+      setNewUserName('');
+      setNewUserGroup('');
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error adding user:', error);
+      toast({
+        title: "Erro ao adicionar usuário",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteUser = (userId: number) => {
-    setUsers(users.filter(user => user.id !== userId));
-    toast({
-      title: "Usuário removido",
-      description: "Usuário removido com sucesso.",
-    });
+  const handleDeleteUser = async (userId: string) => {
+    setLoading(true);
+    
+    try {
+      // Delete user
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Usuário removido",
+        description: "Usuário removido com sucesso.",
+      });
+
+      // Refresh users
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Erro ao remover usuário",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const todayRecords = mealRecords.filter(record => 
-    record.date === new Date().toISOString().split('T')[0]
-  );
-
-  const breakfastToday = todayRecords.filter(record => record.mealType === 'breakfast').length;
-  const lunchToday = todayRecords.filter(record => record.mealType === 'lunch').length;
-  const operacaoToday = todayRecords.filter(record => record.group === 'operacao').length;
-  const projetosToday = todayRecords.filter(record => record.group === 'projetos').length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-4">
@@ -117,7 +272,11 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Café Hoje</p>
-                  <p className="text-2xl font-bold text-orange-600">{breakfastToday}</p>
+                  {statsLoading ? (
+                    <Loader2 className="h-5 w-5 text-orange-600 animate-spin" />
+                  ) : (
+                    <p className="text-2xl font-bold text-orange-600">{breakfastToday}</p>
+                  )}
                 </div>
                 <Coffee className="h-8 w-8 text-orange-600" />
               </div>
@@ -129,7 +288,11 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Almoço Hoje</p>
-                  <p className="text-2xl font-bold text-blue-600">{lunchToday}</p>
+                  {statsLoading ? (
+                    <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+                  ) : (
+                    <p className="text-2xl font-bold text-blue-600">{lunchToday}</p>
+                  )}
                 </div>
                 <Utensils className="h-8 w-8 text-blue-600" />
               </div>
@@ -141,7 +304,11 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Operação</p>
-                  <p className="text-2xl font-bold text-green-600">{operacaoToday}</p>
+                  {statsLoading ? (
+                    <Loader2 className="h-5 w-5 text-green-600 animate-spin" />
+                  ) : (
+                    <p className="text-2xl font-bold text-green-600">{operacaoToday}</p>
+                  )}
                 </div>
                 <Building2 className="h-8 w-8 text-green-600" />
               </div>
@@ -153,7 +320,11 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Projetos</p>
-                  <p className="text-2xl font-bold text-purple-600">{projetosToday}</p>
+                  {statsLoading ? (
+                    <Loader2 className="h-5 w-5 text-purple-600 animate-spin" />
+                  ) : (
+                    <p className="text-2xl font-bold text-purple-600">{projetosToday}</p>
+                  )}
                 </div>
                 <Users className="h-8 w-8 text-purple-600" />
               </div>
@@ -197,12 +368,17 @@ const AdminDashboard = () => {
                       value={newUserName}
                       onChange={(e) => setNewUserName(e.target.value)}
                       placeholder="Digite o nome..."
+                      disabled={loading}
                     />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="newUserGroup">Grupo</Label>
-                    <Select value={newUserGroup} onValueChange={setNewUserGroup}>
+                    <Select 
+                      value={newUserGroup} 
+                      onValueChange={(value) => setNewUserGroup(value as GroupType)}
+                      disabled={loading}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o grupo..." />
                       </SelectTrigger>
@@ -213,8 +389,19 @@ const AdminDashboard = () => {
                     </Select>
                   </div>
 
-                  <Button onClick={handleAddUser} className="w-full">
-                    Adicionar Usuário
+                  <Button 
+                    onClick={handleAddUser} 
+                    className="w-full"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Adicionando...
+                      </>
+                    ) : (
+                      'Adicionar Usuário'
+                    )}
                   </Button>
                 </CardContent>
               </Card>
@@ -228,28 +415,41 @@ const AdminDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {users.map((user) => (
-                      <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-gray-600 capitalize">{user.group}</p>
+                  {loading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {users.map((user) => (
+                        <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div>
+                            <p className="font-medium">{user.name}</p>
+                            <p className="text-sm text-gray-600 capitalize">{user.group_type === 'operacao' ? 'Operação' : 'Projetos'}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleDeleteUser(user.id)}
+                              disabled={loading}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => handleDeleteUser(user.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                      
+                      {users.length === 0 && (
+                        <p className="text-center py-4 text-gray-500">
+                          Nenhum usuário encontrado.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -265,38 +465,52 @@ const AdminDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-2">Nome</th>
-                        <th className="text-left p-2">Grupo</th>
-                        <th className="text-left p-2">Refeição</th>
-                        <th className="text-left p-2">Data</th>
-                        <th className="text-left p-2">Hora</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mealRecords.map((record) => (
-                        <tr key={record.id} className="border-b hover:bg-gray-50">
-                          <td className="p-2">{record.name}</td>
-                          <td className="p-2 capitalize">{record.group}</td>
-                          <td className="p-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              record.mealType === 'breakfast' 
-                                ? 'bg-orange-100 text-orange-800' 
-                                : 'bg-blue-100 text-blue-800'
-                            }`}>
-                              {record.mealType === 'breakfast' ? 'Café' : 'Almoço'}
-                            </span>
-                          </td>
-                          <td className="p-2">{new Date(record.date).toLocaleDateString('pt-BR')}</td>
-                          <td className="p-2">{record.time}</td>
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-2">Nome</th>
+                          <th className="text-left p-2">Grupo</th>
+                          <th className="text-left p-2">Refeição</th>
+                          <th className="text-left p-2">Data</th>
+                          <th className="text-left p-2">Hora</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {mealRecords.map((record) => (
+                          <tr key={record.id} className="border-b hover:bg-gray-50">
+                            <td className="p-2">{record.user_name}</td>
+                            <td className="p-2 capitalize">{record.group_type === 'operacao' ? 'Operação' : 'Projetos'}</td>
+                            <td className="p-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                record.meal_type === 'breakfast' 
+                                  ? 'bg-orange-100 text-orange-800' 
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {record.meal_type === 'breakfast' ? 'Café' : 'Almoço'}
+                              </span>
+                            </td>
+                            <td className="p-2">{new Date(record.meal_date).toLocaleDateString('pt-BR')}</td>
+                            <td className="p-2">{record.meal_time}</td>
+                          </tr>
+                        ))}
+                        
+                        {mealRecords.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="text-center py-4 text-gray-500">
+                              Nenhum registro encontrado.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

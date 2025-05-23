@@ -6,39 +6,105 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { GroupType, MealType, User, SystemSettings } from '@/types/database.types';
 
 const PublicAccess = () => {
-  const [selectedGroup, setSelectedGroup] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState<GroupType | ''>('');
   const [selectedName, setSelectedName] = useState('');
   const [customName, setCustomName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [users, setUsers] = useState<{[key in GroupType]: string[]}>({
+    operacao: [],
+    projetos: []
+  });
+  const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Mock data for users
-  const users = {
-    operacao: ['João Silva', 'Maria Santos', 'Pedro Oliveira', 'Ana Costa', 'Carlos Ferreira'],
-    projetos: ['Lucas Pereira', 'Fernanda Lima', 'Roberto Alves', 'Juliana Rocha', 'Marcos Souza']
-  };
+  // Fetch users from Supabase
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('name, group_type')
+        .eq('active', true);
+
+      if (error) {
+        console.error('Error fetching users:', error);
+        toast({
+          title: "Erro ao carregar usuários",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const groupedUsers: {[key in GroupType]: string[]} = {
+        operacao: [],
+        projetos: []
+      };
+
+      data.forEach((user: { name: string, group_type: GroupType }) => {
+        if (groupedUsers[user.group_type]) {
+          groupedUsers[user.group_type].push(user.name);
+        }
+      });
+
+      setUsers(groupedUsers);
+    };
+
+    fetchUsers();
+  }, []);
+
+  // Fetch system settings from Supabase
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error fetching settings:', error);
+        return;
+      }
+
+      setSystemSettings(data);
+    };
+
+    fetchSettings();
+  }, []);
+
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const allUsers = [...users.operacao, ...users.projetos];
   
   const filteredUsers = selectedGroup 
-    ? users[selectedGroup as keyof typeof users].filter(name => 
+    ? users[selectedGroup].filter(name => 
         name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : allUsers.filter(name => 
         name.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const canRegisterBreakfast = systemSettings 
+    ? currentTime.getHours() < parseInt(systemSettings.breakfast_deadline.split(':')[0]) || 
+      (currentTime.getHours() === parseInt(systemSettings.breakfast_deadline.split(':')[0]) && 
+       currentTime.getMinutes() < parseInt(systemSettings.breakfast_deadline.split(':')[1]))
+    : currentTime.getHours() < 9;
 
-  const canRegisterBreakfast = currentTime.getHours() < 9;
-  const canRegisterLunch = currentTime.getHours() < 14;
+  const canRegisterLunch = systemSettings
+    ? currentTime.getHours() < parseInt(systemSettings.lunch_deadline.split(':')[0]) || 
+      (currentTime.getHours() === parseInt(systemSettings.lunch_deadline.split(':')[0]) && 
+       currentTime.getMinutes() < parseInt(systemSettings.lunch_deadline.split(':')[1]))
+    : currentTime.getHours() < 14;
 
-  const handleMealRegistration = (mealType: 'breakfast' | 'lunch') => {
+  const handleMealRegistration = async (mealType: MealType) => {
     if (!selectedGroup) {
       toast({
         title: "Erro",
@@ -61,7 +127,8 @@ const PublicAccess = () => {
     if (mealType === 'breakfast' && !canRegisterBreakfast) {
       toast({
         title: "Horário encerrado",
-        description: "Café da manhã só pode ser marcado até 09:00.",
+        description: "Café da manhã só pode ser marcado até " + 
+          (systemSettings?.breakfast_deadline || '09:00') + ".",
         variant: "destructive"
       });
       return;
@@ -70,31 +137,88 @@ const PublicAccess = () => {
     if (mealType === 'lunch' && !canRegisterLunch) {
       toast({
         title: "Horário encerrado", 
-        description: "Almoço só pode ser marcado até 14:00.",
+        description: "Almoço só pode ser marcado até " + 
+          (systemSettings?.lunch_deadline || '14:00') + ".",
         variant: "destructive"
       });
       return;
     }
 
-    // Here would be the actual registration logic
-    console.log('Registering meal:', {
-      group: selectedGroup,
-      name: userName,
-      mealType,
-      date: currentTime.toISOString().split('T')[0],
-      time: currentTime.toTimeString().split(' ')[0]
-    });
+    setLoading(true);
 
-    toast({
-      title: "Sucesso!",
-      description: `${mealType === 'breakfast' ? 'Café da manhã' : 'Almoço'} registrado para ${userName}.`,
-    });
+    try {
+      // Try to find user ID if it's a registered user
+      let userId = null;
+      if (selectedName !== 'outros') {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id')
+          .eq('name', userName)
+          .eq('group_type', selectedGroup)
+          .single();
+        
+        if (userData) {
+          userId = userData.id;
+        }
+      }
 
-    // Reset form
-    setSelectedGroup('');
-    setSelectedName('');
-    setCustomName('');
-    setSearchTerm('');
+      // Check if this user already registered this meal today
+      if (userId) {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: existingRecord } = await supabase
+          .from('meal_records')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('meal_type', mealType)
+          .eq('meal_date', today);
+
+        if (existingRecord && existingRecord.length > 0) {
+          toast({
+            title: "Registro duplicado",
+            description: `Você já registrou ${mealType === 'breakfast' ? 'café da manhã' : 'almoço'} hoje.`,
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Create the meal record
+      const { error } = await supabase
+        .from('meal_records')
+        .insert({
+          user_id: userId,
+          user_name: userName,
+          group_type: selectedGroup,
+          meal_type: mealType,
+          meal_date: new Date().toISOString().split('T')[0],
+          meal_time: currentTime.toTimeString().split(' ')[0]
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Sucesso!",
+        description: `${mealType === 'breakfast' ? 'Café da manhã' : 'Almoço'} registrado para ${userName}.`,
+      });
+
+      // Reset form
+      setSelectedGroup('');
+      setSelectedName('');
+      setCustomName('');
+      setSearchTerm('');
+    } catch (error: any) {
+      console.error('Error registering meal:', error);
+      toast({
+        title: "Erro ao registrar refeição",
+        description: error.message || "Por favor, tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -122,7 +246,7 @@ const PublicAccess = () => {
           {/* Group Selection */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Selecione o Grupo</label>
-            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+            <Select value={selectedGroup} onValueChange={setSelectedGroup as (value: string) => void}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Escolha seu grupo..." />
               </SelectTrigger>
@@ -191,7 +315,7 @@ const PublicAccess = () => {
           <div className="grid grid-cols-2 gap-3">
             <Button
               onClick={() => handleMealRegistration('breakfast')}
-              disabled={!canRegisterBreakfast}
+              disabled={!canRegisterBreakfast || loading}
               className={`h-20 flex flex-col gap-2 ${
                 canRegisterBreakfast 
                   ? 'bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600' 
@@ -200,12 +324,12 @@ const PublicAccess = () => {
             >
               <Coffee className="h-6 w-6" />
               <span className="text-sm font-medium">Café da Manhã</span>
-              <span className="text-xs opacity-80">até 09:00</span>
+              <span className="text-xs opacity-80">até {systemSettings?.breakfast_deadline || '09:00'}</span>
             </Button>
 
             <Button
               onClick={() => handleMealRegistration('lunch')}
-              disabled={!canRegisterLunch}
+              disabled={!canRegisterLunch || loading}
               className={`h-20 flex flex-col gap-2 ${
                 canRegisterLunch 
                   ? 'bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600' 
@@ -214,7 +338,7 @@ const PublicAccess = () => {
             >
               <Utensils className="h-6 w-6" />
               <span className="text-sm font-medium">Almoço</span>
-              <span className="text-xs opacity-80">até 14:00</span>
+              <span className="text-xs opacity-80">até {systemSettings?.lunch_deadline || '14:00'}</span>
             </Button>
           </div>
 
