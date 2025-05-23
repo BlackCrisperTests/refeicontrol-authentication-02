@@ -19,12 +19,17 @@ import {
   Building2,
   FileText,
   Loader2,
-  Settings
+  Settings,
+  UserCog
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, MealRecord, GroupType } from '@/types/database.types';
 import SystemSettings from './SystemSettings';
+import EditUserDialog from './EditUserDialog';
+import PasswordConfirmDialog from './PasswordConfirmDialog';
+import MealRecordsTable from './MealRecordsTable';
+import AdminUsersManagement from './AdminUsersManagement';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -34,6 +39,14 @@ const AdminDashboard = () => {
   const [mealRecords, setMealRecords] = useState<MealRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
+
+  // Edit user states
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  
+  // Password confirmation states
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   // Stats
   const [breakfastToday, setBreakfastToday] = useState(0);
@@ -253,7 +266,14 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
+  const confirmDeleteUser = (user: User) => {
+    setUserToDelete(user);
+    setShowPasswordDialog(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+
     setLoading(true);
     
     try {
@@ -261,7 +281,7 @@ const AdminDashboard = () => {
       const { error } = await supabase
         .from('users')
         .delete()
-        .eq('id', userId);
+        .eq('id', userToDelete.id);
 
       if (error) throw error;
 
@@ -281,7 +301,13 @@ const AdminDashboard = () => {
       });
     } finally {
       setLoading(false);
+      setUserToDelete(null);
     }
+  };
+
+  const openEditDialog = (user: User) => {
+    setEditingUser(user);
+    setShowEditDialog(true);
   };
 
   return (
@@ -370,7 +396,7 @@ const AdminDashboard = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Usuários
@@ -382,6 +408,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Configurações
+            </TabsTrigger>
+            <TabsTrigger value="admins" className="flex items-center gap-2">
+              <UserCog className="h-4 w-4" />
+              Administradores
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -468,13 +498,17 @@ const AdminDashboard = () => {
                             <p className="text-sm text-gray-600 capitalize">{user.group_type === 'operacao' ? 'Operação' : 'Projetos'}</p>
                           </div>
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => openEditDialog(user)}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button 
                               size="sm" 
                               variant="destructive"
-                              onClick={() => handleDeleteUser(user.id)}
+                              onClick={() => confirmDeleteUser(user)}
                               disabled={loading}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -505,52 +539,11 @@ const AdminDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {loading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-2">Nome</th>
-                          <th className="text-left p-2">Grupo</th>
-                          <th className="text-left p-2">Refeição</th>
-                          <th className="text-left p-2">Data</th>
-                          <th className="text-left p-2">Hora</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {mealRecords.map((record) => (
-                          <tr key={record.id} className="border-b hover:bg-gray-50">
-                            <td className="p-2">{record.user_name}</td>
-                            <td className="p-2 capitalize">{record.group_type === 'operacao' ? 'Operação' : 'Projetos'}</td>
-                            <td className="p-2">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                record.meal_type === 'breakfast' 
-                                  ? 'bg-orange-100 text-orange-800' 
-                                  : 'bg-blue-100 text-blue-800'
-                              }`}>
-                                {record.meal_type === 'breakfast' ? 'Café' : 'Almoço'}
-                              </span>
-                            </td>
-                            <td className="p-2">{new Date(record.meal_date).toLocaleDateString('pt-BR')}</td>
-                            <td className="p-2">{record.meal_time}</td>
-                          </tr>
-                        ))}
-                        
-                        {mealRecords.length === 0 && (
-                          <tr>
-                            <td colSpan={5} className="text-center py-4 text-gray-500">
-                              Nenhum registro encontrado.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                <MealRecordsTable 
+                  records={mealRecords}
+                  loading={loading}
+                  onRecordsUpdated={fetchMealRecords}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -558,6 +551,11 @@ const AdminDashboard = () => {
           {/* Settings Tab */}
           <TabsContent value="settings">
             <SystemSettings />
+          </TabsContent>
+
+          {/* Admin Users Tab */}
+          <TabsContent value="admins">
+            <AdminUsersManagement />
           </TabsContent>
 
           {/* Reports Tab */}
@@ -595,6 +593,29 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Edit User Dialog */}
+        <EditUserDialog
+          user={editingUser}
+          isOpen={showEditDialog}
+          onClose={() => {
+            setShowEditDialog(false);
+            setEditingUser(null);
+          }}
+          onUserUpdated={fetchUsers}
+        />
+
+        {/* Password Confirmation Dialog */}
+        <PasswordConfirmDialog
+          isOpen={showPasswordDialog}
+          onClose={() => {
+            setShowPasswordDialog(false);
+            setUserToDelete(null);
+          }}
+          onConfirm={handleDeleteUser}
+          title="Confirmar Exclusão"
+          message={`Tem certeza que deseja excluir o usuário ${userToDelete?.name}?`}
+        />
       </div>
     </div>
   );
