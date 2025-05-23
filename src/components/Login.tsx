@@ -19,6 +19,8 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
 
+    console.log('Tentando fazer login com usuário:', username);
+
     try {
       // Verificar credenciais do administrador
       const { data: adminUser, error } = await supabase
@@ -28,7 +30,30 @@ const Login = () => {
         .eq('active', true)
         .single();
 
-      if (error || !adminUser) {
+      console.log('Resultado da busca do usuário:', { adminUser, error });
+
+      if (error) {
+        console.error('Erro na consulta:', error);
+        
+        if (error.code === 'PGRST116') {
+          toast({
+            title: "Usuário não encontrado",
+            description: "Verifique se o nome de usuário está correto.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Erro de autenticação",
+            description: `Erro na consulta: ${error.message}`,
+            variant: "destructive"
+          });
+        }
+        setLoading(false);
+        return;
+      }
+
+      if (!adminUser) {
+        console.log('Usuário não encontrado ou inativo');
         toast({
           title: "Erro de autenticação",
           description: "Usuário não encontrado ou inativo.",
@@ -38,16 +63,24 @@ const Login = () => {
         return;
       }
 
+      console.log('Usuário encontrado:', adminUser);
+      console.log('Comparando senhas - inserida:', password, 'armazenada:', adminUser.password_hash);
+
       // Como as senhas estão em texto simples temporariamente, comparamos diretamente
       // Em produção, isso deveria usar hash no servidor
       if (password === adminUser.password_hash) {
+        console.log('Senha correta, fazendo login...');
+        
         // Salvar sessão no localStorage
-        localStorage.setItem('admin_session', JSON.stringify({
+        const sessionData = {
           id: adminUser.id,
           username: adminUser.username,
           name: adminUser.name,
           loginTime: Date.now()
-        }));
+        };
+        
+        localStorage.setItem('admin_session', JSON.stringify(sessionData));
+        console.log('Sessão salva:', sessionData);
 
         toast({
           title: "Login realizado com sucesso!",
@@ -56,6 +89,7 @@ const Login = () => {
 
         navigate('/dashboard');
       } else {
+        console.log('Senha incorreta');
         toast({
           title: "Erro de autenticação",
           description: "Senha incorreta.",
@@ -63,7 +97,7 @@ const Login = () => {
         });
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Erro no login:', error);
       toast({
         title: "Erro de conexão",
         description: "Não foi possível conectar ao servidor.",
