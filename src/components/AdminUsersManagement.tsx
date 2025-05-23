@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminUser } from '@/types/database.types';
-import { Plus, Edit, Trash2, Users, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Loader2, Eye, EyeOff } from 'lucide-react';
 import PasswordConfirmDialog from './PasswordConfirmDialog';
 
 const AdminUsersManagement = () => {
@@ -15,6 +15,8 @@ const AdminUsersManagement = () => {
   const [loading, setLoading] = useState(false);
   const [newAdminName, setNewAdminName] = useState('');
   const [newAdminUsername, setNewAdminUsername] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [actionToConfirm, setActionToConfirm] = useState<(() => void) | null>(null);
 
@@ -43,10 +45,19 @@ const AdminUsersManagement = () => {
   }, []);
 
   const handleAddAdmin = async () => {
-    if (!newAdminName.trim() || !newAdminUsername.trim()) {
+    if (!newAdminName.trim() || !newAdminUsername.trim() || !newAdminPassword.trim()) {
       toast({
         title: "Erro",
         description: "Preencha todos os campos.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newAdminPassword.length < 6) {
+      toast({
+        title: "Erro",
+        description: "A senha deve ter pelo menos 6 caracteres.",
         variant: "destructive"
       });
       return;
@@ -72,13 +83,13 @@ const AdminUsersManagement = () => {
         return;
       }
 
-      // Add new admin user with default password
+      // Add new admin user with the provided password
       const { error } = await supabase
         .from('admin_users')
         .insert({
           name: newAdminName.trim(),
           username: newAdminUsername.trim(),
-          password_hash: 'admin123' // Simplified password for demonstration
+          password_hash: newAdminPassword // In production, this should be hashed
         });
 
       if (error) throw error;
@@ -91,6 +102,7 @@ const AdminUsersManagement = () => {
       // Reset form and refresh list
       setNewAdminName('');
       setNewAdminUsername('');
+      setNewAdminPassword('');
       fetchAdminUsers();
     } catch (error: any) {
       console.error('Error adding admin user:', error);
@@ -204,6 +216,34 @@ const AdminUsersManagement = () => {
                 placeholder="Digite o usuário..."
                 disabled={loading}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="newAdminPassword">Senha</Label>
+              <div className="relative">
+                <Input
+                  id="newAdminPassword"
+                  type={showPassword ? "text" : "password"}
+                  value={newAdminPassword}
+                  onChange={(e) => setNewAdminPassword(e.target.value)}
+                  placeholder="Digite a senha..."
+                  disabled={loading}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
 
             <Button 
