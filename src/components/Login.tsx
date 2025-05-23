@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,10 +8,9 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { Shield, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import bcrypt from 'bcryptjs';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -20,48 +20,28 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Verificar credenciais do administrador
-      const { data: adminUser, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('username', username)
-        .eq('active', true)
-        .single();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      if (error || !adminUser) {
+      if (error) {
         toast({
           title: "Erro de autenticação",
-          description: "Usuário não encontrado ou inativo.",
+          description: error.message,
           variant: "destructive"
         });
         setLoading(false);
         return;
       }
 
-      // Verificar senha usando bcrypt
-      const passwordMatch = await bcrypt.compare(password, adminUser.password_hash);
-
-      if (passwordMatch) {
-        // Salvar sessão no localStorage
-        localStorage.setItem('admin_session', JSON.stringify({
-          id: adminUser.id,
-          username: adminUser.username,
-          name: adminUser.name,
-          loginTime: Date.now()
-        }));
-
+      if (data.user) {
         toast({
           title: "Login realizado com sucesso!",
-          description: `Bem-vindo, ${adminUser.name}!`
+          description: `Bem-vindo!`
         });
 
         navigate('/dashboard');
-      } else {
-        toast({
-          title: "Erro de autenticação",
-          description: "Senha incorreta.",
-          variant: "destructive"
-        });
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -75,7 +55,8 @@ const Login = () => {
     }
   };
 
-  return <div className="min-h-screen flex items-center justify-center p-4">
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl border-0 bg-white/95 backdrop-blur">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
@@ -91,20 +72,44 @@ const Login = () => {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Usuário</Label>
-              <Input id="username" type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="Digite seu usuário" required disabled={loading} />
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                placeholder="Digite seu email" 
+                required 
+                disabled={loading} 
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Digite sua senha" required disabled={loading} />
+              <Input 
+                id="password" 
+                type="password" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                placeholder="Digite sua senha" 
+                required 
+                disabled={loading} 
+              />
             </div>
 
-            <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600" disabled={loading}>
-              {loading ? <>
+            <Button 
+              type="submit" 
+              className="w-full bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600" 
+              disabled={loading}
+            >
+              {loading ? (
+                <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Entrando...
-                </> : 'Entrar'}
+                </>
+              ) : (
+                'Entrar'
+              )}
             </Button>
           </form>
 
@@ -113,11 +118,10 @@ const Login = () => {
               ← Voltar para acesso público
             </a>
           </div>
-
-          
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 };
 
 export default Login;
