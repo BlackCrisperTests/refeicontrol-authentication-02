@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AdminUser } from '@/types/database.types';
 import { Plus, Edit, Trash2, Users, Loader2, Eye, EyeOff } from 'lucide-react';
 import PasswordConfirmDialog from './PasswordConfirmDialog';
+import bcrypt from 'bcryptjs';
 
 const AdminUsersManagement = () => {
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
@@ -82,14 +84,16 @@ const AdminUsersManagement = () => {
         return;
       }
 
-      // For now, store password as plain text (in production, this should be hashed on the server)
-      // This is a temporary solution until we implement proper server-side hashing
+      // Hash the password before storing
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(newAdminPassword, saltRounds);
+
       const { error } = await supabase
         .from('admin_users')
         .insert({
           name: newAdminName.trim(),
           username: newAdminUsername.trim(),
-          password_hash: newAdminPassword // Note: This should be hashed on the server in production
+          password_hash: hashedPassword
         });
 
       if (error) throw error;
