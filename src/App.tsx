@@ -7,7 +7,6 @@ import PublicAccess from "./components/PublicAccess";
 import AdminDashboard from "./components/AdminDashboard";
 import Login from "./components/Login";
 import NotFound from "./pages/NotFound";
-import AdminUsersManagement from "./components/AdminUsersManagement";
 
 // Função para verificar se o usuário está autenticado
 const isAuthenticated = () => {
@@ -36,11 +35,6 @@ const App = () => (
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <AdminDashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin-users" element={
-          <ProtectedRoute>
-            <AdminUsersManagement />
           </ProtectedRoute>
         } />
         <Route path="*" element={<NotFound />} />
