@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { Shield, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import bcrypt from 'bcryptjs';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -64,11 +64,13 @@ const Login = () => {
       }
 
       console.log('Usuário encontrado:', adminUser);
-      console.log('Comparando senhas - inserida:', password, 'armazenada:', adminUser.password_hash);
+      console.log('Comparando senhas - inserida:', password, 'hash armazenado:', adminUser.password_hash);
 
-      // Como as senhas estão em texto simples temporariamente, comparamos diretamente
-      // Em produção, isso deveria usar hash no servidor
-      if (password === adminUser.password_hash) {
+      // Comparar a senha usando bcrypt
+      const isPasswordValid = await bcrypt.compare(password, adminUser.password_hash);
+      console.log('Resultado da comparação:', isPasswordValid);
+
+      if (isPasswordValid) {
         console.log('Senha correta, fazendo login...');
         
         // Salvar sessão no localStorage
