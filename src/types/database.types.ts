@@ -11,6 +11,16 @@ export interface User {
   updated_at: string;
 }
 
+export interface AdminUser {
+  id: string;
+  username: string;
+  password_hash: string;
+  name: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface MealRecord {
   id: string;
   user_id?: string | null;

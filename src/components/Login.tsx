@@ -6,29 +6,69 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Shield } from 'lucide-react';
+import { Shield, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     
-    // Simple authentication - in real app this would be secure
-    if (username === 'admin' && password === 'admin123') {
+    try {
+      // Verificar credenciais do administrador
+      const { data: adminUser, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('username', username)
+        .eq('active', true)
+        .single();
+
+      if (error || !adminUser) {
+        toast({
+          title: "Erro de autenticação",
+          description: "Usuário não encontrado ou inativo.",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Verificar senha (implementação simplificada - em produção use bcrypt)
+      if (password === 'admin123') {
+        // Salvar sessão no localStorage
+        localStorage.setItem('admin_session', JSON.stringify({
+          id: adminUser.id,
+          username: adminUser.username,
+          name: adminUser.name,
+          loginTime: Date.now()
+        }));
+
+        toast({
+          title: "Login realizado com sucesso!",
+          description: `Bem-vindo, ${adminUser.name}!`,
+        });
+        navigate('/dashboard');
+      } else {
+        toast({
+          title: "Erro de autenticação",
+          description: "Senha incorreta.",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
       toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao painel administrativo.",
-      });
-      navigate('/dashboard');
-    } else {
-      toast({
-        title: "Erro de autenticação",
-        description: "Usuário ou senha incorretos.",
+        title: "Erro de conexão",
+        description: "Não foi possível conectar ao servidor.",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -57,6 +97,7 @@ const Login = () => {
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Digite seu usuário"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -69,14 +110,23 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Digite sua senha"
                 required
+                disabled={loading}
               />
             </div>
 
             <Button 
               type="submit" 
               className="w-full bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600"
+              disabled={loading}
             >
-              Entrar
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Entrando...
+                </>
+              ) : (
+                'Entrar'
+              )}
             </Button>
           </form>
 

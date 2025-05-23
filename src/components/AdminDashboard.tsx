@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,11 +18,13 @@ import {
   Utensils,
   Building2,
   FileText,
-  Loader2
+  Loader2,
+  Settings
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, MealRecord, GroupType } from '@/types/database.types';
+import SystemSettings from './SystemSettings';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -39,7 +40,41 @@ const AdminDashboard = () => {
   const [lunchToday, setLunchToday] = useState(0);
   const [operacaoToday, setOperacaoToday] = useState(0);
   const [projetosToday, setProjetosToday] = useState(0);
-  
+
+  // Verificar autenticação
+  useEffect(() => {
+    const adminSession = localStorage.getItem('admin_session');
+    if (!adminSession) {
+      toast({
+        title: "Acesso negado",
+        description: "Você precisa fazer login para acessar esta área.",
+        variant: "destructive"
+      });
+      navigate('/admin');
+      return;
+    }
+
+    try {
+      const session = JSON.parse(adminSession);
+      // Verificar se a sessão não expirou (24 horas)
+      const sessionAge = Date.now() - session.loginTime;
+      if (sessionAge > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem('admin_session');
+        toast({
+          title: "Sessão expirada",
+          description: "Faça login novamente.",
+          variant: "destructive"
+        });
+        navigate('/admin');
+        return;
+      }
+    } catch {
+      localStorage.removeItem('admin_session');
+      navigate('/admin');
+      return;
+    }
+  }, [navigate]);
+
   // Fetch users from Supabase
   const fetchUsers = async () => {
     setLoading(true);
@@ -148,11 +183,12 @@ const AdminDashboard = () => {
   }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem('admin_session');
     toast({
       title: "Logout realizado",
       description: "Até logo!",
     });
-    navigate('/');
+    navigate('/admin');
   };
 
   const handleAddUser = async () => {
@@ -334,7 +370,7 @@ const AdminDashboard = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Usuários
@@ -342,6 +378,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="records" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Registros
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Configurações
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -513,6 +553,11 @@ const AdminDashboard = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings">
+            <SystemSettings />
           </TabsContent>
 
           {/* Reports Tab */}
