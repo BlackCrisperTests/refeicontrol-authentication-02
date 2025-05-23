@@ -10,7 +10,7 @@ import { Shield, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -20,28 +20,47 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Verificar credenciais do administrador
+      const { data: adminUser, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('username', username)
+        .eq('active', true)
+        .single();
 
-      if (error) {
+      if (error || !adminUser) {
         toast({
           title: "Erro de autenticação",
-          description: error.message,
+          description: "Usuário não encontrado ou inativo.",
           variant: "destructive"
         });
         setLoading(false);
         return;
       }
 
-      if (data.user) {
+      // Como as senhas estão em texto simples temporariamente, comparamos diretamente
+      // Em produção, isso deveria usar hash no servidor
+      if (password === adminUser.password_hash) {
+        // Salvar sessão no localStorage
+        localStorage.setItem('admin_session', JSON.stringify({
+          id: adminUser.id,
+          username: adminUser.username,
+          name: adminUser.name,
+          loginTime: Date.now()
+        }));
+
         toast({
           title: "Login realizado com sucesso!",
-          description: `Bem-vindo!`
+          description: `Bem-vindo, ${adminUser.name}!`
         });
 
         navigate('/dashboard');
+      } else {
+        toast({
+          title: "Erro de autenticação",
+          description: "Senha incorreta.",
+          variant: "destructive"
+        });
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -72,13 +91,13 @@ const Login = () => {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Usuário</Label>
               <Input 
-                id="email" 
-                type="email" 
-                value={email} 
-                onChange={e => setEmail(e.target.value)} 
-                placeholder="Digite seu email" 
+                id="username" 
+                type="text" 
+                value={username} 
+                onChange={e => setUsername(e.target.value)} 
+                placeholder="Digite seu usuário" 
                 required 
                 disabled={loading} 
               />
