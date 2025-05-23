@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AdminUser } from '@/types/database.types';
 import { Plus, Edit, Trash2, Users, Loader2, Eye, EyeOff } from 'lucide-react';
 import PasswordConfirmDialog from './PasswordConfirmDialog';
+import bcrypt from 'bcryptjs';
 
 const AdminUsersManagement = () => {
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
@@ -83,13 +84,17 @@ const AdminUsersManagement = () => {
         return;
       }
 
-      // Add new admin user with the provided password
+      // Hash the password before storing
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(newAdminPassword, saltRounds);
+
+      // Add new admin user with the hashed password
       const { error } = await supabase
         .from('admin_users')
         .insert({
           name: newAdminName.trim(),
           username: newAdminUsername.trim(),
-          password_hash: newAdminPassword // In production, this should be hashed
+          password_hash: hashedPassword
         });
 
       if (error) throw error;

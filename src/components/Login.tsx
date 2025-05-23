@@ -7,20 +7,27 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { Shield, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import bcrypt from 'bcryptjs';
+
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       // Verificar credenciais do administrador
-      const {
-        data: adminUser,
-        error
-      } = await supabase.from('admin_users').select('*').eq('username', username).eq('active', true).single();
+      const { data: adminUser, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('username', username)
+        .eq('active', true)
+        .single();
+
       if (error || !adminUser) {
         toast({
           title: "Erro de autenticação",
@@ -31,8 +38,10 @@ const Login = () => {
         return;
       }
 
-      // Verificar senha (implementação simplificada - em produção use bcrypt)
-      if (password === 'admin123') {
+      // Verificar senha usando bcrypt
+      const passwordMatch = await bcrypt.compare(password, adminUser.password_hash);
+
+      if (passwordMatch) {
         // Salvar sessão no localStorage
         localStorage.setItem('admin_session', JSON.stringify({
           id: adminUser.id,
@@ -40,10 +49,12 @@ const Login = () => {
           name: adminUser.name,
           loginTime: Date.now()
         }));
+
         toast({
           title: "Login realizado com sucesso!",
           description: `Bem-vindo, ${adminUser.name}!`
         });
+
         navigate('/dashboard');
       } else {
         toast({
@@ -63,6 +74,7 @@ const Login = () => {
       setLoading(false);
     }
   };
+
   return <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl border-0 bg-white/95 backdrop-blur">
         <CardHeader className="text-center space-y-4">
@@ -107,4 +119,5 @@ const Login = () => {
       </Card>
     </div>;
 };
+
 export default Login;
