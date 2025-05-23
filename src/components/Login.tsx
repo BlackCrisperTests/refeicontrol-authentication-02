@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,18 +18,29 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!username.trim() || !password.trim()) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      // Verificar credenciais do administrador
+      // Buscar o usuário pelo nome de usuário
       const { data: adminUser, error } = await supabase
         .from('admin_users')
         .select('*')
-        .eq('username', username)
+        .eq('username', username.trim())
         .eq('active', true)
         .single();
 
       if (error || !adminUser) {
+        console.error("Erro ao buscar usuário:", error);
         toast({
           title: "Erro de autenticação",
           description: "Usuário não encontrado ou inativo.",
@@ -38,8 +50,12 @@ const Login = () => {
         return;
       }
 
+      console.log("Usuário encontrado:", adminUser.username);
+      
       // Verificar senha usando bcrypt
       const passwordMatch = await bcrypt.compare(password, adminUser.password_hash);
+      
+      console.log("Resultado da verificação de senha:", passwordMatch);
 
       if (passwordMatch) {
         // Salvar sessão no localStorage
@@ -113,8 +129,6 @@ const Login = () => {
               ← Voltar para acesso público
             </a>
           </div>
-
-          
         </CardContent>
       </Card>
     </div>;
