@@ -119,7 +119,7 @@ const MealRecordsTable = ({
   const startIndex = (currentPage - 1) * recordsPerPage;
   const paginatedRecords = filteredRecords.slice(startIndex, startIndex + recordsPerPage);
 
-  // Estatísticas dos registros filtrados
+  // Estatísticas dos registros filtrados - agora dinâmica para todos os grupos
   const stats = useMemo(() => {
     const breakfastCount = filteredRecords.filter(r => r.meal_type === 'breakfast').length;
     const lunchCount = filteredRecords.filter(r => r.meal_type === 'lunch').length;
@@ -166,8 +166,8 @@ const MealRecordsTable = ({
 
   return (
     <div className="space-y-6">
-      {/* Estatísticas */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Estatísticas - agora mostra todos os grupos dinamicamente */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -192,7 +192,8 @@ const MealRecordsTable = ({
           </CardContent>
         </Card>
         
-        {groups.slice(0, 2).map((group, index) => (
+        {/* Estatísticas dinâmicas para todos os grupos */}
+        {groups.map((group) => (
           <Card key={group.id}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">

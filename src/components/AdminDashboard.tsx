@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -42,6 +41,8 @@ const AdminDashboard = () => {
   // Stats
   const [breakfastToday, setBreakfastToday] = useState(0);
   const [lunchToday, setLunchToday] = useState(0);
+  const [breakfastMonth, setBreakfastMonth] = useState(0);
+  const [lunchMonth, setLunchMonth] = useState(0);
   const [groupStats, setGroupStats] = useState<{[key: string]: number}>({});
 
   // Verificar autenticação
@@ -119,46 +120,52 @@ const AdminDashboard = () => {
     setLoading(false);
   };
 
-  // Fetch today's stats
-  const fetchTodayStats = async () => {
+  // Fetch today's and monthly stats
+  const fetchStats = async () => {
     setStatsLoading(true);
     const today = new Date().toISOString().split('T')[0];
+    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+    const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
     
     try {
-      // Breakfast count
-      const { data: breakfastData, error: breakfastError } = await supabase
+      // Breakfast count today
+      const { data: breakfastTodayData, error: breakfastTodayError } = await supabase
         .from('meal_records')
         .select('id')
         .eq('meal_date', today)
         .eq('meal_type', 'breakfast');
-      if (breakfastError) throw breakfastError;
+      if (breakfastTodayError) throw breakfastTodayError;
 
-      // Lunch count
-      const { data: lunchData, error: lunchError } = await supabase
+      // Lunch count today
+      const { data: lunchTodayData, error: lunchTodayError } = await supabase
         .from('meal_records')
         .select('id')
         .eq('meal_date', today)
         .eq('meal_type', 'lunch');
-      if (lunchError) throw lunchError;
+      if (lunchTodayError) throw lunchTodayError;
 
-      // Group statistics
-      const { data: groupData, error: groupError } = await supabase
+      // Breakfast count this month
+      const { data: breakfastMonthData, error: breakfastMonthError } = await supabase
         .from('meal_records')
-        .select('group_id')
-        .eq('meal_date', today);
-      if (groupError) throw groupError;
+        .select('id')
+        .gte('meal_date', startOfMonth)
+        .lte('meal_date', endOfMonth)
+        .eq('meal_type', 'breakfast');
+      if (breakfastMonthError) throw breakfastMonthError;
 
-      // Count by group
-      const groupCounts = groupData.reduce((acc: {[key: string]: number}, record) => {
-        if (record.group_id) {
-          acc[record.group_id] = (acc[record.group_id] || 0) + 1;
-        }
-        return acc;
-      }, {});
+      // Lunch count this month
+      const { data: lunchMonthData, error: lunchMonthError } = await supabase
+        .from('meal_records')
+        .select('id')
+        .gte('meal_date', startOfMonth)
+        .lte('meal_date', endOfMonth)
+        .eq('meal_type', 'lunch');
+      if (lunchMonthError) throw lunchMonthError;
 
-      setBreakfastToday(breakfastData.length);
-      setLunchToday(lunchData.length);
-      setGroupStats(groupCounts);
+      setBreakfastToday(breakfastTodayData.length);
+      setLunchToday(lunchTodayData.length);
+      setBreakfastMonth(breakfastMonthData.length);
+      setLunchMonth(lunchMonthData.length);
     } catch (error: any) {
       console.error('Error fetching stats:', error);
       toast({
@@ -170,13 +177,6 @@ const AdminDashboard = () => {
       setStatsLoading(false);
     }
   };
-
-  // Initial data fetch
-  useEffect(() => {
-    fetchUsers();
-    fetchMealRecords();
-    fetchTodayStats();
-  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('admin_session');
@@ -380,54 +380,47 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Dynamic Group Stats */}
-          {groups.slice(0, 2).map((group, index) => (
-            <Card key={group.id} className={`border-0 shadow-sm ${
-              index === 0 
-                ? 'bg-gradient-to-br from-emerald-50 to-emerald-100/50' 
-                : 'bg-gradient-to-br from-purple-50 to-purple-100/50'
-            }`}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className={`text-sm font-medium mb-1 ${
-                      index === 0 ? 'text-emerald-700' : 'text-purple-700'
-                    }`}>
-                      {group.display_name}
-                    </p>
-                    {statsLoading ? (
-                      <Loader2 className={`h-6 w-6 animate-spin ${
-                        index === 0 ? 'text-emerald-600' : 'text-purple-600'
-                      }`} />
-                    ) : (
-                      <div className="flex items-baseline gap-2">
-                        <p className={`text-3xl font-bold ${
-                          index === 0 ? 'text-emerald-800' : 'text-purple-800'
-                        }`}>
-                          {groupStats[group.id] || 0}
-                        </p>
-                        <span className={`text-sm ${
-                          index === 0 ? 'text-emerald-600' : 'text-purple-600'
-                        }`}>
-                          hoje
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div 
-                    className="p-3 rounded-xl"
-                    style={{ backgroundColor: group.color }}
-                  >
-                    {index === 0 ? (
-                      <Building2 className="h-8 w-8 text-white" />
-                    ) : (
-                      <Users className="h-8 w-8 text-white" />
-                    )}
-                  </div>
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-emerald-100/50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium mb-1 text-emerald-700">Café Mês Atual</p>
+                  {statsLoading ? (
+                    <Loader2 className="h-6 w-6 text-emerald-600 animate-spin" />
+                  ) : (
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-3xl font-bold text-emerald-800">{breakfastMonth}</p>
+                      <span className="text-sm text-emerald-600">total</span>
+                    </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+                <div className="p-3 bg-emerald-500 rounded-xl">
+                  <Coffee className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-purple-100/50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium mb-1 text-purple-700">Almoço Mês Atual</p>
+                  {statsLoading ? (
+                    <Loader2 className="h-6 w-6 text-purple-600 animate-spin" />
+                  ) : (
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-3xl font-bold text-purple-800">{lunchMonth}</p>
+                      <span className="text-sm text-purple-600">total</span>
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 bg-purple-500 rounded-xl">
+                  <Utensils className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Professional Tabs */}
