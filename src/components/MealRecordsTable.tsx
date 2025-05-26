@@ -10,26 +10,27 @@ import { supabase } from '@/integrations/supabase/client';
 import { MealRecord } from '@/types/database.types';
 import { Trash2, Loader2, Search, Filter, Calendar, Users, Coffee, Utensils } from 'lucide-react';
 import PasswordConfirmDialog from './PasswordConfirmDialog';
-
 interface MealRecordsTableProps {
   records: MealRecord[];
   loading: boolean;
   onRecordsUpdated: () => void;
 }
-
-const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTableProps) => {
-  
+const MealRecordsTable = ({
+  records,
+  loading,
+  onRecordsUpdated
+}: MealRecordsTableProps) => {
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<MealRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
-  
+
   // Filtros
   const [searchName, setSearchName] = useState('');
   const [filterGroup, setFilterGroup] = useState<string>('all');
   const [filterMeal, setFilterMeal] = useState<string>('all');
   const [filterDate, setFilterDate] = useState<string>('');
   const [filterMonth, setFilterMonth] = useState<string>('all');
-  
+
   // Paginação
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
@@ -42,35 +43,30 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       months.add(monthKey);
     });
-    
     return Array.from(months).sort().reverse().map(monthKey => {
       const [year, month] = monthKey.split('-');
-      const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('pt-BR', { 
-        month: 'long', 
-        year: 'numeric' 
+      const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('pt-BR', {
+        month: 'long',
+        year: 'numeric'
       });
-      return { value: monthKey, label: monthName };
+      return {
+        value: monthKey,
+        label: monthName
+      };
     });
   }, [records]);
-
   const handleDeleteRecord = async () => {
     if (!recordToDelete) return;
-
     setDeleting(true);
-    
     try {
-      const { error } = await supabase
-        .from('meal_records')
-        .delete()
-        .eq('id', recordToDelete.id);
-
+      const {
+        error
+      } = await supabase.from('meal_records').delete().eq('id', recordToDelete.id);
       if (error) throw error;
-
       toast({
         title: "Registro removido",
-        description: "O registro de refeição foi removido com sucesso.",
+        description: "O registro de refeição foi removido com sucesso."
       });
-
       onRecordsUpdated();
     } catch (error: any) {
       console.error('Error deleting meal record:', error);
@@ -84,7 +80,6 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
       setRecordToDelete(null);
     }
   };
-
   const confirmDelete = (record: MealRecord) => {
     setRecordToDelete(record);
     setShowPasswordDialog(true);
@@ -92,12 +87,12 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
 
   // Filtrar registros
   const filteredRecords = useMemo(() => {
-    return records.filter((record) => {
+    return records.filter(record => {
       const matchesName = record.user_name.toLowerCase().includes(searchName.toLowerCase());
       const matchesGroup = filterGroup === 'all' || record.group_type === filterGroup;
       const matchesMeal = filterMeal === 'all' || record.meal_type === filterMeal;
       const matchesDate = !filterDate || record.meal_date === filterDate;
-      
+
       // Filtro por mês
       let matchesMonth = true;
       if (filterMonth && filterMonth !== 'all') {
@@ -105,7 +100,6 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
         const recordMonthKey = `${recordDate.getFullYear()}-${String(recordDate.getMonth() + 1).padStart(2, '0')}`;
         matchesMonth = recordMonthKey === filterMonth;
       }
-      
       return matchesName && matchesGroup && matchesMeal && matchesDate && matchesMonth;
     });
   }, [records, searchName, filterGroup, filterMeal, filterDate, filterMonth]);
@@ -121,10 +115,13 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
     const lunchCount = filteredRecords.filter(r => r.meal_type === 'lunch').length;
     const operacaoCount = filteredRecords.filter(r => r.group_type === 'operacao').length;
     const projetosCount = filteredRecords.filter(r => r.group_type === 'projetos').length;
-    
-    return { breakfastCount, lunchCount, operacaoCount, projetosCount };
+    return {
+      breakfastCount,
+      lunchCount,
+      operacaoCount,
+      projetosCount
+    };
   }, [filteredRecords]);
-
   const clearFilters = () => {
     setSearchName('');
     setFilterGroup('all');
@@ -133,17 +130,12 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
     setFilterMonth('all');
     setCurrentPage(1);
   };
-
   if (loading) {
-    return (
-      <div className="flex justify-center py-8">
+    return <div className="flex justify-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Estatísticas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
@@ -163,7 +155,7 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Almoço</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.lunchCount}</p>
+                <p className="text-2xl font-bold text-green-600">{stats.lunchCount}</p>
               </div>
               <Utensils className="h-6 w-6 text-blue-600" />
             </div>
@@ -207,12 +199,7 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar por nome..."
-                value={searchName}
-                onChange={(e) => setSearchName(e.target.value)}
-                className="pl-10"
-              />
+              <Input placeholder="Buscar por nome..." value={searchName} onChange={e => setSearchName(e.target.value)} className="pl-10" />
             </div>
             
             <Select value={filterGroup} onValueChange={setFilterGroup}>
@@ -243,20 +230,13 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os meses</SelectItem>
-                {availableMonths.map((month) => (
-                  <SelectItem key={month.value} value={month.value}>
+                {availableMonths.map(month => <SelectItem key={month.value} value={month.value}>
                     {month.label}
-                  </SelectItem>
-                ))}
+                  </SelectItem>)}
               </SelectContent>
             </Select>
             
-            <Input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              placeholder="Filtrar por data"
-            />
+            <Input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} placeholder="Filtrar por data" />
             
             <Button variant="outline" onClick={clearFilters}>
               Limpar Filtros
@@ -293,24 +273,15 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedRecords.map((record) => (
-                    <TableRow key={record.id} className="hover:bg-gray-50">
+                  {paginatedRecords.map(record => <TableRow key={record.id} className="hover:bg-gray-50">
                       <TableCell className="font-medium">{record.user_name}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          record.group_type === 'operacao' 
-                            ? 'bg-red-100 text-red-800' 
-                            : 'bg-blue-100 text-blue-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${record.group_type === 'operacao' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
                           {record.group_type === 'operacao' ? 'Operação' : 'Projetos'}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          record.meal_type === 'breakfast' 
-                            ? 'bg-orange-100 text-orange-800' 
-                            : 'bg-blue-100 text-blue-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${record.meal_type === 'breakfast' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'}`}>
                           {record.meal_type === 'breakfast' ? 'Café' : 'Almoço'}
                         </span>
                       </TableCell>
@@ -319,53 +290,31 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
                       </TableCell>
                       <TableCell className="font-mono text-sm">{record.meal_time}</TableCell>
                       <TableCell>
-                        <Button 
-                          size="sm" 
-                          variant="destructive"
-                          onClick={() => confirmDelete(record)}
-                          disabled={deleting}
-                        >
+                        <Button size="sm" variant="destructive" onClick={() => confirmDelete(record)} disabled={deleting}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
-                    </TableRow>
-                  ))}
+                    </TableRow>)}
                   
-                  {paginatedRecords.length === 0 && (
-                    <TableRow>
+                  {paginatedRecords.length === 0 && <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                        {filteredRecords.length === 0 ? 
-                          "Nenhum registro encontrado com os filtros aplicados." :
-                          "Nenhum registro encontrado."
-                        }
+                        {filteredRecords.length === 0 ? "Nenhum registro encontrado com os filtros aplicados." : "Nenhum registro encontrado."}
                       </TableCell>
-                    </TableRow>
-                  )}
+                    </TableRow>}
                 </TableBody>
               </Table>
 
               {/* Paginação */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4">
+              {totalPages > 1 && <div className="flex items-center justify-between mt-4">
                   <p className="text-sm text-gray-600">
                     Mostrando {startIndex + 1} a {Math.min(startIndex + recordsPerPage, filteredRecords.length)} de {filteredRecords.length} registros
                   </p>
                   
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(1)}
-                      disabled={currentPage === 1}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
                       Primeira
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
                       Anterior
                     </Button>
                     
@@ -373,42 +322,23 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
                       Página {currentPage} de {totalPages}
                     </span>
                     
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
                       Próxima
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(totalPages)}
-                      disabled={currentPage === totalPages}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}>
                       Última
                     </Button>
                   </div>
-                </div>
-              )}
+                </div>}
             </div>
           </ScrollArea>
         </CardContent>
       </Card>
 
-      <PasswordConfirmDialog
-        isOpen={showPasswordDialog}
-        onClose={() => {
-          setShowPasswordDialog(false);
-          setRecordToDelete(null);
-        }}
-        onConfirm={handleDeleteRecord}
-        title="Confirmar Exclusão"
-        message={`Tem certeza que deseja excluir o registro de ${recordToDelete?.meal_type === 'breakfast' ? 'café' : 'almoço'} de ${recordToDelete?.user_name}?`}
-      />
-    </div>
-  );
+      <PasswordConfirmDialog isOpen={showPasswordDialog} onClose={() => {
+      setShowPasswordDialog(false);
+      setRecordToDelete(null);
+    }} onConfirm={handleDeleteRecord} title="Confirmar Exclusão" message={`Tem certeza que deseja excluir o registro de ${recordToDelete?.meal_type === 'breakfast' ? 'café' : 'almoço'} de ${recordToDelete?.user_name}?`} />
+    </div>;
 };
-
 export default MealRecordsTable;

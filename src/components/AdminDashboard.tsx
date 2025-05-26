@@ -320,13 +320,13 @@ const AdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-700 mb-1">Almoço Hoje</p>
+                  <p className="text-sm font-medium mb-1 text-green-700">Almoço Hoje</p>
                   {statsLoading ? <Loader2 className="h-6 w-6 text-blue-600 animate-spin" /> : <div className="flex items-baseline gap-2">
-                      <p className="text-3xl font-bold text-blue-800">{lunchToday}</p>
-                      <span className="text-sm text-blue-600">registros</span>
+                      <p className="text-3xl font-bold text-green-600">{lunchToday}</p>
+                      <span className="text-sm text-green-600">registros</span>
                     </div>}
                 </div>
-                <div className="p-3 bg-blue-500 rounded-xl">
+                <div className="p-3 rounded-xl bg-green-500">
                   <Utensils className="h-8 w-8 text-white" />
                 </div>
               </div>
