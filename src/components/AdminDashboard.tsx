@@ -10,8 +10,6 @@ import {
   Users, 
   LogOut, 
   Plus, 
-  Edit, 
-  Trash2, 
   BarChart3, 
   Calendar,
   Coffee,
@@ -30,6 +28,7 @@ import EditUserDialog from './EditUserDialog';
 import PasswordConfirmDialog from './PasswordConfirmDialog';
 import MealRecordsTable from './MealRecordsTable';
 import AdminUsersManagement from './AdminUsersManagement';
+import UsersList from './UsersList';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -477,75 +476,22 @@ const AdminDashboard = () => {
               </Card>
 
               {/* Users List */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Lista de Usuários
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {loading ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {users.map((user) => (
-                        <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div>
-                            <p className="font-medium">{user.name}</p>
-                            <p className="text-sm text-gray-600 capitalize">{user.group_type === 'operacao' ? 'Operação' : 'Projetos'}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => openEditDialog(user)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="destructive"
-                              onClick={() => confirmDeleteUser(user)}
-                              disabled={loading}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {users.length === 0 && (
-                        <p className="text-center py-4 text-gray-500">
-                          Nenhum usuário encontrado.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <UsersList
+                users={users}
+                loading={loading}
+                onEditUser={openEditDialog}
+                onDeleteUser={confirmDeleteUser}
+              />
             </div>
           </TabsContent>
 
           {/* Records Tab */}
           <TabsContent value="records">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Registros de Refeições
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <MealRecordsTable 
-                  records={mealRecords}
-                  loading={loading}
-                  onRecordsUpdated={fetchMealRecords}
-                />
-              </CardContent>
-            </Card>
+            <MealRecordsTable 
+              records={mealRecords}
+              loading={loading}
+              onRecordsUpdated={fetchMealRecords}
+            />
           </TabsContent>
 
           {/* Settings Tab */}

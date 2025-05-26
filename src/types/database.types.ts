@@ -34,7 +34,9 @@ export interface MealRecord {
 
 export interface SystemSettings {
   id: string;
+  breakfast_start_time?: string;
   breakfast_deadline: string;
+  lunch_start_time?: string;
   lunch_deadline: string;
   updated_at: string;
 }
