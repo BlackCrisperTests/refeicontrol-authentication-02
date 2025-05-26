@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Clock, Coffee, Utensils, Users, Building2, Search, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,24 @@ const PublicAccess = () => {
            typeof name === 'string' && 
            name.trim() !== '' && 
            name.trim().length > 0;
+  };
+
+  // Helper function to check if current time is within allowed range
+  const isWithinTimeRange = (startTime: string | null, endTime: string) => {
+    if (!startTime) return false;
+    
+    const now = currentTime;
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const startTimeInMinutes = startHour * 60 + startMinute;
+    
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+    const endTimeInMinutes = endHour * 60 + endMinute;
+    
+    return currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
   };
 
   // Fetch users from Supabase
@@ -112,16 +131,24 @@ const PublicAccess = () => {
   console.log('Filtered users for rendering:', filteredUsers);
 
   const canRegisterBreakfast = systemSettings 
-    ? currentTime.getHours() < parseInt(systemSettings.breakfast_deadline.split(':')[0]) || 
-      (currentTime.getHours() === parseInt(systemSettings.breakfast_deadline.split(':')[0]) && 
-       currentTime.getMinutes() < parseInt(systemSettings.breakfast_deadline.split(':')[1]))
-    : currentTime.getHours() < 9;
+    ? isWithinTimeRange(systemSettings.breakfast_start_time, systemSettings.breakfast_deadline)
+    : false;
 
   const canRegisterLunch = systemSettings
-    ? currentTime.getHours() < parseInt(systemSettings.lunch_deadline.split(':')[0]) || 
-      (currentTime.getHours() === parseInt(systemSettings.lunch_deadline.split(':')[0]) && 
-       currentTime.getMinutes() < parseInt(systemSettings.lunch_deadline.split(':')[1]))
-    : currentTime.getHours() < 14;
+    ? isWithinTimeRange(systemSettings.lunch_start_time, systemSettings.lunch_deadline)
+    : false;
+
+  const getBreakfastTimeRange = () => {
+    if (!systemSettings) return 'Não configurado';
+    const startTime = systemSettings.breakfast_start_time || '06:00';
+    return `${startTime} às ${systemSettings.breakfast_deadline}`;
+  };
+
+  const getLunchTimeRange = () => {
+    if (!systemSettings) return 'Não configurado';
+    const startTime = systemSettings.lunch_start_time || '11:00';
+    return `${startTime} às ${systemSettings.lunch_deadline}`;
+  };
 
   const handleMealRegistration = async (mealType: MealType) => {
     if (!selectedGroup) {
@@ -145,9 +172,8 @@ const PublicAccess = () => {
 
     if (mealType === 'breakfast' && !canRegisterBreakfast) {
       toast({
-        title: "Horário encerrado",
-        description: "Café da manhã só pode ser marcado até " + 
-          (systemSettings?.breakfast_deadline || '09:00') + ".",
+        title: "Horário não permitido",
+        description: `Café da manhã só pode ser registrado ${getBreakfastTimeRange()}.`,
         variant: "destructive"
       });
       return;
@@ -155,9 +181,8 @@ const PublicAccess = () => {
 
     if (mealType === 'lunch' && !canRegisterLunch) {
       toast({
-        title: "Horário encerrado", 
-        description: "Almoço só pode ser marcado até " + 
-          (systemSettings?.lunch_deadline || '14:00') + ".",
+        title: "Horário não permitido", 
+        description: `Almoço só pode ser registrado ${getLunchTimeRange()}.`,
         variant: "destructive"
       });
       return;
@@ -352,7 +377,7 @@ const PublicAccess = () => {
             >
               <Coffee className="h-6 w-6" />
               <span className="text-sm font-medium">Café da Manhã</span>
-              <span className="text-xs opacity-80">até {systemSettings?.breakfast_deadline || '09:00'}</span>
+              <span className="text-xs opacity-80">{getBreakfastTimeRange()}</span>
             </Button>
 
             <Button
@@ -366,7 +391,7 @@ const PublicAccess = () => {
             >
               <Utensils className="h-6 w-6" />
               <span className="text-sm font-medium">Almoço</span>
-              <span className="text-xs opacity-80">até {systemSettings?.lunch_deadline || '14:00'}</span>
+              <span className="text-xs opacity-80">{getLunchTimeRange()}</span>
             </Button>
           </div>
 
