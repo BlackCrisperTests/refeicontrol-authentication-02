@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Coffee, Utensils, Users, Building2, Search, QrCode, Sparkles, Timer } from 'lucide-react';
+import { Clock, Coffee, Utensils, Users, Building2, Search, QrCode, Sparkles, Timer, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -265,216 +265,271 @@ const PublicAccess = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 p-4 flex items-center justify-center">
-      <div className="w-full max-w-lg">
-        {/* Header with animated logo */}
-        <div className="text-center mb-8">
-          <div className="relative inline-block">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur-xl opacity-20 animate-pulse"></div>
-            <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-3xl shadow-2xl">
-              <QrCode className="h-12 w-12 text-white mx-auto" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header Simplificado */}
+        <div className="text-center mb-12">
+          <div className="relative inline-block mb-6">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-green-600 rounded-full blur-xl opacity-30 animate-pulse"></div>
+            <div className="relative bg-white p-6 rounded-full shadow-2xl border-4 border-blue-100">
+              <Utensils className="h-16 w-16 text-blue-600 mx-auto" />
             </div>
           </div>
           
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mt-6 mb-2">
-            RefeiControl
+          <h1 className="text-5xl font-black text-slate-800 mb-4">
+            REFEIÇÕES
           </h1>
-          <p className="text-slate-600 text-lg font-medium">Sistema de Controle de Refeições</p>
           
-          {/* Current time with modern styling */}
-          <div className="mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-2xl shadow-lg border border-white/20">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full">
-                <Clock className="h-4 w-4 text-white" />
-              </div>
-              <span className="font-mono text-lg font-semibold text-slate-700">
-                {currentTime.toLocaleTimeString('pt-BR')}
+          {/* Horário Grande e Visível */}
+          <div className="bg-white/90 backdrop-blur-sm p-6 rounded-3xl shadow-xl border border-blue-100 inline-block">
+            <div className="flex items-center gap-4">
+              <Clock className="h-8 w-8 text-blue-600" />
+              <span className="font-mono text-3xl font-bold text-slate-800">
+                {currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Main form card */}
-        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardContent className="p-8 space-y-8">
-            {/* Step indicator */}
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <div className={`h-2 w-8 rounded-full transition-all duration-300 ${
-                selectedGroup ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 'bg-slate-200'
-              }`}></div>
-              <div className={`h-2 w-8 rounded-full transition-all duration-300 ${
-                selectedGroup && (selectedName || customName) ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 'bg-slate-200'
-              }`}></div>
-              <div className={`h-2 w-8 rounded-full transition-all duration-300 ${
-                selectedGroup && (selectedName || customName) ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 'bg-slate-200'
-              }`}></div>
-            </div>
-
-            {/* Group Selection */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="h-5 w-5 text-indigo-500" />
-                <label className="text-lg font-semibold text-slate-700">Selecione seu Grupo</label>
+        {/* Processo de 3 Passos Muito Visual */}
+        <div className="space-y-8">
+          
+          {/* PASSO 1: Escolher Grupo */}
+          <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-8">
+              <div className="flex items-center gap-4">
+                <div className="bg-white/20 p-4 rounded-full">
+                  <span className="text-3xl font-black">1</span>
+                </div>
+                <div>
+                  <CardTitle className="text-2xl font-bold">ESCOLHA SEU GRUPO</CardTitle>
+                  <p className="text-blue-100 text-lg">Selecione onde você trabalha</p>
+                </div>
               </div>
-              
-              <Select value={selectedGroup} onValueChange={setSelectedGroup as (value: string) => void}>
-                <SelectTrigger className="h-14 text-lg border-2 border-slate-200 hover:border-indigo-300 transition-all duration-200 bg-white/50">
-                  <SelectValue placeholder="Escolha seu grupo de trabalho..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="operacao" className="h-12 text-base">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-red-100 rounded-lg">
-                        <Building2 className="h-5 w-5 text-red-600" />
-                      </div>
-                      <div>
-                        <div className="font-medium">Operação</div>
-                        <div className="text-sm text-slate-500">Equipe operacional</div>
-                      </div>
+            </CardHeader>
+            <CardContent className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Button
+                  onClick={() => setSelectedGroup('operacao')}
+                  className={`h-24 text-xl font-bold transition-all duration-300 ${
+                    selectedGroup === 'operacao'
+                      ? 'bg-red-500 hover:bg-red-600 text-white scale-105 shadow-xl'
+                      : 'bg-white border-4 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-full ${
+                      selectedGroup === 'operacao' ? 'bg-white/20' : 'bg-red-100'
+                    }`}>
+                      <Building2 className="h-8 w-8" />
                     </div>
-                  </SelectItem>
-                  <SelectItem value="projetos" className="h-12 text-base">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <Users className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <div className="font-medium">Projetos</div>
-                        <div className="text-sm text-slate-500">Equipe de projetos</div>
-                      </div>
+                    <div className="text-left">
+                      <div className="text-2xl font-black">OPERAÇÃO</div>
+                      <div className="text-sm opacity-90">Equipe de produção</div>
                     </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                  </div>
+                  {selectedGroup === 'operacao' && (
+                    <CheckCircle className="h-6 w-6 ml-auto" />
+                  )}
+                </Button>
 
-            {/* Name Selection with animation */}
-            {selectedGroup && (
-              <div className="space-y-4 animate-fade-in">
-                <div className="flex items-center gap-2 mb-3">
-                  <Users className="h-5 w-5 text-indigo-500" />
-                  <label className="text-lg font-semibold text-slate-700">Identifique-se</label>
+                <Button
+                  onClick={() => setSelectedGroup('projetos')}
+                  className={`h-24 text-xl font-bold transition-all duration-300 ${
+                    selectedGroup === 'projetos'
+                      ? 'bg-blue-500 hover:bg-blue-600 text-white scale-105 shadow-xl'
+                      : 'bg-white border-4 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-full ${
+                      selectedGroup === 'projetos' ? 'bg-white/20' : 'bg-blue-100'
+                    }`}>
+                      <Users className="h-8 w-8" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-2xl font-black">PROJETOS</div>
+                      <div className="text-sm opacity-90">Equipe de projetos</div>
+                    </div>
+                  </div>
+                  {selectedGroup === 'projetos' && (
+                    <CheckCircle className="h-6 w-6 ml-auto" />
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* PASSO 2: Escolher Nome */}
+          {selectedGroup && (
+            <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
+              <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white py-8">
+                <div className="flex items-center gap-4">
+                  <div className="bg-white/20 p-4 rounded-full">
+                    <span className="text-3xl font-black">2</span>
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold">ENCONTRE SEU NOME</CardTitle>
+                    <p className="text-green-100 text-lg">Digite para buscar ou escolha na lista</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8 space-y-6">
+                {/* Campo de busca maior e mais visível */}
+                <div className="relative">
+                  <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 text-slate-400 h-6 w-6 z-10" />
+                  <Input
+                    placeholder="Digite seu nome aqui..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-16 pl-16 text-xl border-4 border-slate-200 hover:border-green-300 transition-all duration-200 bg-white/50 rounded-2xl"
+                  />
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5 z-10" />
+                {/* Lista de nomes mais visual */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                  {filteredUsers
+                    .filter(name => isValidUserName(name))
+                    .map((name) => (
+                      <Button
+                        key={name}
+                        onClick={() => setSelectedName(name)}
+                        className={`h-14 text-lg font-semibold justify-start transition-all duration-200 ${
+                          selectedName === name
+                            ? 'bg-green-500 hover:bg-green-600 text-white scale-105 shadow-lg'
+                            : 'bg-white border-2 border-slate-200 text-slate-700 hover:bg-green-50 hover:border-green-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <div className={`w-3 h-3 rounded-full ${
+                            selectedName === name ? 'bg-white' : 'bg-green-500'
+                          }`}></div>
+                          <span className="flex-1 text-left">{name}</span>
+                          {selectedName === name && (
+                            <CheckCircle className="h-5 w-5" />
+                          )}
+                        </div>
+                      </Button>
+                    ))}
+                  
+                  {/* Opção "Outros" */}
+                  <Button
+                    onClick={() => setSelectedName('outros')}
+                    className={`h-14 text-lg font-semibold justify-start border-t-4 transition-all duration-200 ${
+                      selectedName === 'outros'
+                        ? 'bg-yellow-500 hover:bg-yellow-600 text-white scale-105 shadow-lg'
+                        : 'bg-white border-2 border-yellow-200 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <div className={`w-3 h-3 rounded-full ${
+                        selectedName === 'outros' ? 'bg-white' : 'bg-yellow-500'
+                      }`}></div>
+                      <span className="flex-1 text-left font-bold">NOME NÃO ESTÁ NA LISTA</span>
+                      {selectedName === 'outros' && (
+                        <CheckCircle className="h-5 w-5" />
+                      )}
+                    </div>
+                  </Button>
+                </div>
+
+                {/* Campo para nome customizado */}
+                {selectedName === 'outros' && (
+                  <div className="mt-6 animate-fade-in">
                     <Input
-                      placeholder="Buscar seu nome..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="h-12 pl-12 text-base border-2 border-slate-200 hover:border-indigo-300 transition-all duration-200 bg-white/50"
+                      placeholder="Digite seu nome completo aqui..."
+                      value={customName}
+                      onChange={(e) => setCustomName(e.target.value)}
+                      className="h-16 text-xl border-4 border-yellow-200 hover:border-yellow-300 transition-all duration-200 bg-yellow-50 rounded-2xl"
                     />
                   </div>
-                  
-                  <Select value={selectedName} onValueChange={setSelectedName}>
-                    <SelectTrigger className="h-12 text-base border-2 border-slate-200 hover:border-indigo-300 transition-all duration-200 bg-white/50">
-                      <SelectValue placeholder="Selecione seu nome..." />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      {filteredUsers
-                        .filter(name => isValidUserName(name))
-                        .map((name) => (
-                          <SelectItem key={name} value={name} className="h-10">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              {name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      <SelectItem value="outros" className="h-10 border-t">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="font-medium">Outros (digitar nome)</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-            {/* Custom Name Input with animation */}
-            {selectedName === 'outros' && (
-              <div className="space-y-4 animate-fade-in">
-                <div className="flex items-center gap-2 mb-3">
-                  <Timer className="h-5 w-5 text-indigo-500" />
-                  <label className="text-lg font-semibold text-slate-700">Digite seu nome</label>
+          {/* PASSO 3: Escolher Refeição */}
+          {selectedGroup && (selectedName || (selectedName === 'outros' && customName)) && (
+            <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
+              <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white py-8">
+                <div className="flex items-center gap-4">
+                  <div className="bg-white/20 p-4 rounded-full">
+                    <span className="text-3xl font-black">3</span>
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold">ESCOLHA SUA REFEIÇÃO</CardTitle>
+                    <p className="text-purple-100 text-lg">Clique na refeição que quer registrar</p>
+                  </div>
                 </div>
-                <Input
-                  placeholder="Seu nome completo..."
-                  value={customName}
-                  onChange={(e) => setCustomName(e.target.value)}
-                  className="h-12 text-base border-2 border-slate-200 hover:border-indigo-300 transition-all duration-200 bg-white/50"
-                />
-              </div>
-            )}
-
-            {/* Meal Buttons with enhanced design */}
-            {selectedGroup && (selectedName || (selectedName === 'outros' && customName)) && (
-              <div className="space-y-6 animate-fade-in">
-                <div className="text-center">
-                  <h3 className="text-xl font-semibold text-slate-700 mb-2">Registrar Refeição</h3>
-                  <p className="text-slate-500">Selecione a refeição que deseja registrar</p>
-                </div>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  {/* Breakfast Button */}
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Botão Café da Manhã */}
                   <Button
                     onClick={() => handleMealRegistration('breakfast')}
                     disabled={!canRegisterBreakfast || loading}
-                    className={`h-20 flex items-center gap-4 justify-start px-6 text-left transition-all duration-300 ${
+                    className={`h-32 flex flex-col gap-3 justify-center text-left transition-all duration-300 ${
                       canRegisterBreakfast 
-                        ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-lg hover:shadow-xl hover:scale-[1.02]' 
-                        : 'bg-slate-200 cursor-not-allowed opacity-60'
+                        ? 'bg-gradient-to-br from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white shadow-xl hover:shadow-2xl hover:scale-105' 
+                        : 'bg-slate-200 cursor-not-allowed opacity-60 text-slate-500'
                     }`}
                   >
-                    <div className={`p-3 rounded-xl ${canRegisterBreakfast ? 'bg-white/20' : 'bg-slate-300'}`}>
-                      <Coffee className="h-8 w-8" />
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={`p-4 rounded-2xl ${canRegisterBreakfast ? 'bg-white/20' : 'bg-slate-300'}`}>
+                        <Coffee className="h-12 w-12" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-2xl font-black">CAFÉ DA MANHÃ</div>
+                        <div className="text-lg opacity-90">{getBreakfastTimeRange()}</div>
+                        {canRegisterBreakfast && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                            <span className="text-sm font-semibold">DISPONÍVEL AGORA</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <div className="text-lg font-semibold">Café da Manhã</div>
-                      <div className="text-sm opacity-90">{getBreakfastTimeRange()}</div>
-                    </div>
-                    {canRegisterBreakfast && (
-                      <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                    )}
                   </Button>
 
-                  {/* Lunch Button */}
+                  {/* Botão Almoço */}
                   <Button
                     onClick={() => handleMealRegistration('lunch')}
                     disabled={!canRegisterLunch || loading}
-                    className={`h-20 flex items-center gap-4 justify-start px-6 text-left transition-all duration-300 ${
+                    className={`h-32 flex flex-col gap-3 justify-center text-left transition-all duration-300 ${
                       canRegisterLunch 
-                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 shadow-lg hover:shadow-xl hover:scale-[1.02]' 
-                        : 'bg-slate-200 cursor-not-allowed opacity-60'
+                        ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl hover:scale-105' 
+                        : 'bg-slate-200 cursor-not-allowed opacity-60 text-slate-500'
                     }`}
                   >
-                    <div className={`p-3 rounded-xl ${canRegisterLunch ? 'bg-white/20' : 'bg-slate-300'}`}>
-                      <Utensils className="h-8 w-8" />
+                    <div className="flex items-center gap-4 w-full">
+                      <div className={`p-4 rounded-2xl ${canRegisterLunch ? 'bg-white/20' : 'bg-slate-300'}`}>
+                        <Utensils className="h-12 w-12" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-2xl font-black">ALMOÇO</div>
+                        <div className="text-lg opacity-90">{getLunchTimeRange()}</div>
+                        {canRegisterLunch && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                            <span className="text-sm font-semibold">DISPONÍVEL AGORA</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <div className="text-lg font-semibold">Almoço</div>
-                      <div className="text-sm opacity-90">{getLunchTimeRange()}</div>
-                    </div>
-                    {canRegisterLunch && (
-                      <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                    )}
                   </Button>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
-        {/* Admin Access */}
-        <div className="text-center mt-8">
+        {/* Admin Access - Menos proeminente */}
+        <div className="text-center mt-12">
           <a 
             href="/admin" 
-            className="inline-flex items-center gap-2 px-6 py-3 text-slate-600 hover:text-indigo-600 transition-all duration-200 bg-white/60 hover:bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl border border-white/20"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-slate-500 hover:text-slate-700 transition-all duration-200 bg-white/40 hover:bg-white/60 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md border border-white/30"
           >
-            <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+            <div className="w-2 h-2 bg-slate-400 rounded-full"></div>
             Acesso Administrativo
           </a>
         </div>
