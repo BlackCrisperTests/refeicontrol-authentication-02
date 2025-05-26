@@ -49,7 +49,7 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
   const handleFilterChange = (key: keyof ReportFilters, value: string) => {
     onFiltersChange({
       ...filters,
-      [key]: value || undefined,
+      [key]: value === 'all' ? undefined : value || undefined,
     });
   };
 
@@ -82,14 +82,14 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
           <div className="space-y-2">
             <Label htmlFor="month-filter">Mês</Label>
             <Select
-              value={filters.month || ''}
+              value={filters.month || 'all'}
               onValueChange={(value) => handleFilterChange('month', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Todos os meses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os meses</SelectItem>
+                <SelectItem value="all">Todos os meses</SelectItem>
                 {months.map((month) => (
                   <SelectItem key={month.value} value={`${currentYear}-${month.value}`}>
                     {month.label} {currentYear}
@@ -103,14 +103,14 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
           <div className="space-y-2">
             <Label htmlFor="group-filter">Grupo</Label>
             <Select
-              value={filters.group || ''}
+              value={filters.group || 'all'}
               onValueChange={(value) => handleFilterChange('group', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Todos os grupos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os grupos</SelectItem>
+                <SelectItem value="all">Todos os grupos</SelectItem>
                 <SelectItem value="operacao">Operação</SelectItem>
                 <SelectItem value="projetos">Projetos</SelectItem>
               </SelectContent>
@@ -133,14 +133,14 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
           <div className="space-y-2">
             <Label htmlFor="user-filter">Usuário</Label>
             <Select
-              value={filters.user || ''}
+              value={filters.user || 'all'}
               onValueChange={(value) => handleFilterChange('user', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Todos os usuários" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os usuários</SelectItem>
+                <SelectItem value="all">Todos os usuários</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.name} value={user.name}>
                     {user.name}
