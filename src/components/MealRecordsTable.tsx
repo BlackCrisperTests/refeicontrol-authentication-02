@@ -18,6 +18,7 @@ interface MealRecordsTableProps {
 }
 
 const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTableProps) => {
+  
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<MealRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -174,9 +175,9 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Operação</p>
-                <p className="text-2xl font-bold text-green-600">{stats.operacaoCount}</p>
+                <p className="text-2xl font-bold text-red-600">{stats.operacaoCount}</p>
               </div>
-              <Users className="h-6 w-6 text-green-600" />
+              <Users className="h-6 w-6 text-red-600" />
             </div>
           </CardContent>
         </Card>
@@ -186,9 +187,9 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Projetos</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.projetosCount}</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.projetosCount}</p>
               </div>
-              <Users className="h-6 w-6 text-purple-600" />
+              <Users className="h-6 w-6 text-blue-600" />
             </div>
           </CardContent>
         </Card>
@@ -298,8 +299,8 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           record.group_type === 'operacao' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-purple-100 text-purple-800'
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-blue-100 text-blue-800'
                         }`}>
                           {record.group_type === 'operacao' ? 'Operação' : 'Projetos'}
                         </span>

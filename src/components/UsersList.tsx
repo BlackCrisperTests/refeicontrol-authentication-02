@@ -48,15 +48,15 @@ const UsersList = ({ users, loading, onEditUser, onDeleteUser }: UsersListProps)
           </CardTitle>
           
           <div className="flex gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 rounded-lg border border-emerald-200">
-              <Building2 className="h-4 w-4 text-emerald-600" />
-              <span className="text-sm font-semibold text-emerald-700">{groupCounts.operacao || 0}</span>
-              <span className="text-xs text-emerald-600">Operação</span>
+            <div className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-lg border border-red-200">
+              <Building2 className="h-4 w-4 text-red-600" />
+              <span className="text-sm font-semibold text-red-700">{groupCounts.operacao || 0}</span>
+              <span className="text-xs text-red-600">Operação</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 bg-purple-50 rounded-lg border border-purple-200">
-              <Briefcase className="h-4 w-4 text-purple-600" />
-              <span className="text-sm font-semibold text-purple-700">{groupCounts.projetos || 0}</span>
-              <span className="text-xs text-purple-600">Projetos</span>
+            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
+              <Briefcase className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-semibold text-blue-700">{groupCounts.projetos || 0}</span>
+              <span className="text-xs text-blue-600">Projetos</span>
             </div>
           </div>
         </div>
@@ -81,13 +81,13 @@ const UsersList = ({ users, loading, onEditUser, onDeleteUser }: UsersListProps)
                       {/* User Avatar */}
                       <div className={`relative p-3 rounded-xl ${
                         user.group_type === 'operacao' 
-                          ? 'bg-emerald-100' 
-                          : 'bg-purple-100'
+                          ? 'bg-red-100' 
+                          : 'bg-blue-100'
                       }`}>
                         {user.group_type === 'operacao' ? (
-                          <Building2 className="h-6 w-6 text-emerald-600" />
+                          <Building2 className="h-6 w-6 text-red-600" />
                         ) : (
-                          <Briefcase className="h-6 w-6 text-purple-600" />
+                          <Briefcase className="h-6 w-6 text-blue-600" />
                         )}
                         {user.active && (
                           <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
@@ -104,8 +104,8 @@ const UsersList = ({ users, loading, onEditUser, onDeleteUser }: UsersListProps)
                             variant="outline"
                             className={`px-2 py-1 text-xs font-medium border ${
                               user.group_type === 'operacao' 
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                                : 'bg-purple-50 text-purple-700 border-purple-200'
+                                ? 'bg-red-50 text-red-700 border-red-200' 
+                                : 'bg-blue-50 text-blue-700 border-blue-200'
                             }`}
                           >
                             {user.group_type === 'operacao' ? 'Operação' : 'Projetos'}
