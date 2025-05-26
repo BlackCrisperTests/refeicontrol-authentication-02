@@ -28,7 +28,7 @@ const BrandHeader: React.FC<BrandHeaderProps> = ({
             <img 
               src="/lovable-uploads/da23f7ca-e2dc-473a-8266-22c9c492e5d0.png" 
               alt="RefeiControl - Sistema de Controle de Refeições" 
-              className="h-12 w-auto"
+              className="h-16 w-auto"
             />
           </div>
         </div>
