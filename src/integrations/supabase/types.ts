@@ -83,20 +83,26 @@ export type Database = {
       system_settings: {
         Row: {
           breakfast_deadline: string
+          breakfast_start_time: string | null
           id: string
           lunch_deadline: string
+          lunch_start_time: string | null
           updated_at: string
         }
         Insert: {
           breakfast_deadline?: string
+          breakfast_start_time?: string | null
           id?: string
           lunch_deadline?: string
+          lunch_start_time?: string | null
           updated_at?: string
         }
         Update: {
           breakfast_deadline?: string
+          breakfast_start_time?: string | null
           id?: string
           lunch_deadline?: string
+          lunch_start_time?: string | null
           updated_at?: string
         }
         Relationships: []

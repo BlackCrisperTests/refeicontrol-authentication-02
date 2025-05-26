@@ -1,4 +1,5 @@
 
+
 export type GroupType = 'operacao' | 'projetos';
 export type MealType = 'breakfast' | 'lunch';
 
@@ -40,3 +41,4 @@ export interface SystemSettings {
   lunch_deadline: string;
   updated_at: string;
 }
+
