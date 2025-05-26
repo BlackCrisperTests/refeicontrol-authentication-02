@@ -17,6 +17,7 @@ import MealRecordsTable from './MealRecordsTable';
 import AdminUsersManagement from './AdminUsersManagement';
 import UsersList from './UsersList';
 import ReportsSection from './ReportsSection';
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [newUserName, setNewUserName] = useState('');
@@ -281,11 +282,13 @@ const AdminDashboard = () => {
                 />
               </div>
               
-              {/* RefeiControl */}
+              {/* RefeiControl com logo */}
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-900 rounded-lg">
-                  <Shield className="h-6 w-6 text-white" />
-                </div>
+                <img 
+                  src="/lovable-uploads/da23f7ca-e2dc-473a-8266-22c9c492e5d0.png" 
+                  alt="RefeiControl" 
+                  className="h-10 w-auto"
+                />
                 <div>
                   <h1 className="text-2xl font-bold text-slate-900">RefeiControl</h1>
                   <p className="text-sm text-slate-600 font-medium">Painel Administrativo</p>

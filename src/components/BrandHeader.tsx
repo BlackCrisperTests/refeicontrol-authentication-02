@@ -24,9 +24,16 @@ const BrandHeader: React.FC<BrandHeaderProps> = ({
       {showRefeiControl && (
         <div className="flex items-center gap-4">
           <div className="w-px h-12 bg-slate-300"></div>
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-slate-800">RefeiControl</h1>
-            <p className="text-slate-600 font-medium">Sistema de Controle de Refeições</p>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/lovable-uploads/da23f7ca-e2dc-473a-8266-22c9c492e5d0.png" 
+              alt="RefeiControl" 
+              className="h-12 w-auto"
+            />
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-slate-800">RefeiControl</h1>
+              <p className="text-slate-600 font-medium">Sistema de Controle de Refeições</p>
+            </div>
           </div>
         </div>
       )}
