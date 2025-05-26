@@ -16,6 +16,7 @@ import PasswordConfirmDialog from './PasswordConfirmDialog';
 import MealRecordsTable from './MealRecordsTable';
 import AdminUsersManagement from './AdminUsersManagement';
 import UsersList from './UsersList';
+import ReportsSection from './ReportsSection';
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [newUserName, setNewUserName] = useState('');
@@ -456,37 +457,7 @@ const AdminDashboard = () => {
 
           {/* Reports Tab */}
           <TabsContent value="reports">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Relatórios
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button variant="outline" className="h-20 flex flex-col gap-2">
-                    <Calendar className="h-6 w-6" />
-                    <span>Relatório Diário</span>
-                  </Button>
-                  
-                  <Button variant="outline" className="h-20 flex flex-col gap-2">
-                    <BarChart3 className="h-6 w-6" />
-                    <span>Relatório Mensal</span>
-                  </Button>
-                  
-                  <Button variant="outline" className="h-20 flex flex-col gap-2">
-                    <Users className="h-6 w-6" />
-                    <span>Por Usuário</span>
-                  </Button>
-                  
-                  <Button variant="outline" className="h-20 flex flex-col gap-2">
-                    <Building2 className="h-6 w-6" />
-                    <span>Por Grupo</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <ReportsSection />
           </TabsContent>
         </Tabs>
 
@@ -504,4 +475,5 @@ const AdminDashboard = () => {
       </div>
     </div>;
 };
+
 export default AdminDashboard;
