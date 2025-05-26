@@ -154,6 +154,7 @@ export type Database = {
           group_id: string | null
           group_type: Database["public"]["Enums"]["group_type"]
           id: string
+          matricula: string | null
           name: string
           updated_at: string
         }
@@ -163,6 +164,7 @@ export type Database = {
           group_id?: string | null
           group_type: Database["public"]["Enums"]["group_type"]
           id?: string
+          matricula?: string | null
           name: string
           updated_at?: string
         }
@@ -172,6 +174,7 @@ export type Database = {
           group_id?: string | null
           group_type?: Database["public"]["Enums"]["group_type"]
           id?: string
+          matricula?: string | null
           name?: string
           updated_at?: string
         }

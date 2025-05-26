@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MealType, User, SystemSettings } from '@/types/database.types';
 import DynamicGroupSelector from './DynamicGroupSelector';
+import MatriculaVerification from './MatriculaVerification';
 
 const PublicAccess = () => {
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
@@ -19,6 +20,9 @@ const PublicAccess = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showMatriculaVerification, setShowMatriculaVerification] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isMatriculaVerified, setIsMatriculaVerified] = useState(false);
 
   // Helper function to validate user names
   const isValidUserName = (name: any): boolean => {
@@ -131,6 +135,43 @@ const PublicAccess = () => {
     setSelectedName('');
     setCustomName('');
     setSearchTerm('');
+    setShowMatriculaVerification(false);
+    setIsMatriculaVerified(false);
+    setSelectedUser(null);
+  };
+
+  const handleNameSelect = (userName: string) => {
+    setSelectedName(userName);
+    
+    if (userName !== 'outros') {
+      // Buscar usuário com matrícula
+      const user = users.find(u => u.name === userName);
+      if (user && user.matricula) {
+        setSelectedUser(user);
+        setShowMatriculaVerification(true);
+        setIsMatriculaVerified(false);
+      } else {
+        // Usuário sem matrícula, permitir acesso direto
+        setIsMatriculaVerified(true);
+        setShowMatriculaVerification(false);
+      }
+    } else {
+      // Usuário customizado, não precisa de verificação
+      setIsMatriculaVerified(true);
+      setShowMatriculaVerification(false);
+    }
+  };
+
+  const handleMatriculaVerificationSuccess = () => {
+    setIsMatriculaVerified(true);
+    setShowMatriculaVerification(false);
+  };
+
+  const handleMatriculaVerificationCancel = () => {
+    setShowMatriculaVerification(false);
+    setSelectedName('');
+    setSelectedUser(null);
+    setIsMatriculaVerified(false);
   };
 
   const handleMealRegistration = async (mealType: MealType) => {
@@ -177,9 +218,9 @@ const PublicAccess = () => {
       // Try to find user ID if it's a registered user
       let userId = null;
       if (selectedName !== 'outros') {
-        const selectedUser = users.find(user => user.name === userName);
-        if (selectedUser) {
-          userId = selectedUser.id;
+        const selectedUserData = users.find(user => user.name === userName);
+        if (selectedUserData) {
+          userId = selectedUserData.id;
         }
       }
 
@@ -232,6 +273,9 @@ const PublicAccess = () => {
       setSelectedName('');
       setCustomName('');
       setSearchTerm('');
+      setShowMatriculaVerification(false);
+      setIsMatriculaVerified(false);
+      setSelectedUser(null);
     } catch (error: any) {
       console.error('Error registering meal:', error);
       toast({
@@ -243,6 +287,22 @@ const PublicAccess = () => {
       setLoading(false);
     }
   };
+
+  // Show matricula verification if needed
+  if (showMatriculaVerification && selectedUser?.matricula) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <MatriculaVerification
+            correctMatricula={selectedUser.matricula}
+            userName={selectedUser.name}
+            onVerificationSuccess={handleMatriculaVerificationSuccess}
+            onCancel={handleMatriculaVerificationCancel}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
@@ -328,7 +388,7 @@ const PublicAccess = () => {
                     .map((user) => (
                       <Button
                         key={user.id}
-                        onClick={() => setSelectedName(user.name)}
+                        onClick={() => handleNameSelect(user.name)}
                         className={`h-14 text-lg font-semibold justify-start transition-all duration-200 ${
                           selectedName === user.name
                             ? 'bg-green-500 hover:bg-green-600 text-white scale-105 shadow-lg'
@@ -349,7 +409,7 @@ const PublicAccess = () => {
                   
                   {/* Opção "Outros" */}
                   <Button
-                    onClick={() => setSelectedName('outros')}
+                    onClick={() => handleNameSelect('outros')}
                     className={`h-14 text-lg font-semibold justify-start border-t-4 transition-all duration-200 ${
                       selectedName === 'outros'
                         ? 'bg-yellow-500 hover:bg-yellow-600 text-white scale-105 shadow-lg'
@@ -384,7 +444,7 @@ const PublicAccess = () => {
           )}
 
           {/* PASSO 3: Escolher Refeição */}
-          {selectedGroup && (selectedName || (selectedName === 'outros' && customName)) && (
+          {selectedGroup && (selectedName || (selectedName === 'outros' && customName)) && isMatriculaVerified && (
             <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
               <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white py-8">
                 <div className="flex items-center gap-4">

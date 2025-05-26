@@ -17,6 +17,7 @@ export interface User {
   name: string;
   group_type: GroupType;
   group_id?: string | null;
+  matricula?: string | null;
   active: boolean;
   created_at: string;
   updated_at: string;

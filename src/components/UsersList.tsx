@@ -1,211 +1,359 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types/database.types';
-import { Users, Edit, Trash2, UserCheck, Clock } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Search, Loader2 } from 'lucide-react';
 import { useGroups } from '@/hooks/useGroups';
+import EditUserDialog from './EditUserDialog';
 
-interface UsersListProps {
-  users: User[];
-  loading: boolean;
-  onEditUser: (user: User) => void;
-  onDeleteUser: (user: User) => void;
-}
-
-const UsersList = ({ users, loading, onEditUser, onDeleteUser }: UsersListProps) => {
+const UsersList = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserMatricula, setNewUserMatricula] = useState('');
+  const [newUserGroupId, setNewUserGroupId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { groups } = useGroups();
 
-  console.log('👥 UsersList: Props recebidas:', {
-    usersCount: users.length,
-    loading,
-    groupsCount: groups.length
-  });
+  const fetchUsers = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        *,
+        groups!users_group_id_fkey (
+          display_name,
+          color
+        )
+      `)
+      .order('name');
 
-  console.log('👥 UsersList: Dados dos usuários:', users);
-  console.log('🏷️ UsersList: Dados dos grupos:', groups);
-
-  if (loading) {
-    return (
-      <Card className="border-0 shadow-sm h-[600px]">
-        <CardContent className="p-8">
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-300 border-t-slate-600 mb-4"></div>
-            <p className="text-slate-600 font-medium">Carregando usuários...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Create a map of group_id to group for quick lookup
-  const groupsMap = groups.reduce((acc, group) => {
-    acc[group.id] = group;
-    return acc;
-  }, {} as Record<string, any>);
-
-  console.log('🗺️ UsersList: Mapa de grupos:', groupsMap);
-
-  // Group counts using the new group system
-  const groupCounts = users.reduce((acc, user) => {
-    const group = user.group_id ? groupsMap[user.group_id] : null;
-    if (group) {
-      acc[group.id] = (acc[group.id] || 0) + 1;
+    if (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: "Erro ao carregar usuários",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      setUsers(data as any);
     }
-    return acc;
-  }, {} as Record<string, number>);
+    setLoading(false);
+  };
 
-  console.log('📊 UsersList: Contagem por grupos:', groupCounts);
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleAddUser = async () => {
+    if (!newUserName.trim()) {
+      toast({
+        title: "Erro",
+        description: "Nome é obrigatório.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!newUserGroupId) {
+      toast({
+        title: "Erro",
+        description: "Selecione um grupo.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validar matrícula se fornecida
+    if (newUserMatricula && !/^\d{3}$/.test(newUserMatricula)) {
+      toast({
+        title: "Erro",
+        description: "Matrícula deve ter exatamente 3 dígitos.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Verificar se já existe um usuário com essa matrícula
+      if (newUserMatricula) {
+        const { data: existingUser } = await supabase
+          .from('users')
+          .select('id')
+          .eq('matricula', newUserMatricula)
+          .maybeSingle();
+
+        if (existingUser) {
+          toast({
+            title: "Erro",
+            description: "Já existe um usuário com essa matrícula.",
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      const selectedGroup = groups.find(g => g.id === newUserGroupId);
+      
+      const { error } = await supabase
+        .from('users')
+        .insert({
+          name: newUserName.trim(),
+          matricula: newUserMatricula || null,
+          group_id: newUserGroupId,
+          group_type: selectedGroup?.name as any
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Usuário adicionado",
+        description: `${newUserName} foi adicionado com sucesso.`,
+      });
+
+      // Reset form and refresh list
+      setNewUserName('');
+      setNewUserMatricula('');
+      setNewUserGroupId('');
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error adding user:', error);
+      toast({
+        title: "Erro ao adicionar usuário",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Tem certeza que deseja remover ${userName}?`)) {
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Usuário removido",
+        description: `${userName} foi removido com sucesso.`,
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Erro ao remover usuário",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setIsEditDialogOpen(true);
+  };
+
+  const filteredUsers = users.filter(user =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.matricula && user.matricula.includes(searchTerm))
+  );
 
   return (
-    <Card className="border-0 shadow-sm h-[600px] flex flex-col">
-      <CardHeader className="pb-4 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-3">
-            <div className="p-2 bg-slate-100 rounded-lg">
-              <Users className="h-5 w-5 text-slate-700" />
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Add User */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Adicionar Usuário
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newUserName">Nome</Label>
+              <Input
+                id="newUserName"
+                value={newUserName}
+                onChange={(e) => setNewUserName(e.target.value)}
+                placeholder="Digite o nome..."
+                disabled={loading}
+              />
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">Usuários Cadastrados</h3>
-              <p className="text-sm text-slate-600 font-normal">Gerencie os usuários do sistema</p>
+
+            <div className="space-y-2">
+              <Label htmlFor="newUserMatricula">Matrícula</Label>
+              <Input
+                id="newUserMatricula"
+                value={newUserMatricula}
+                onChange={(e) => setNewUserMatricula(e.target.value)}
+                placeholder="Digite a matrícula (3 dígitos)..."
+                maxLength={3}
+                disabled={loading}
+              />
             </div>
-          </CardTitle>
-          
-          <div className="flex gap-3 flex-wrap">
-            {groups.map((group) => (
-              <div 
-                key={group.id}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border"
-                style={{ 
-                  backgroundColor: `${group.color}20`, 
-                  borderColor: `${group.color}40` 
-                }}
-              >
-                <div 
-                  className="h-4 w-4 rounded-full"
-                  style={{ backgroundColor: group.color }}
+            
+            <div className="space-y-2">
+              <Label htmlFor="newUserGroup">Grupo</Label>
+              <Select value={newUserGroupId} onValueChange={setNewUserGroupId} disabled={loading}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um grupo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {groups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: group.color }}
+                        />
+                        {group.display_name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button 
+              onClick={handleAddUser} 
+              className="w-full"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adicionando...
+                </>
+              ) : (
+                'Adicionar Usuário'
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Users List */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Lista de Usuários ({filteredUsers.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Buscar por nome ou matrícula..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
                 />
-                <span className="text-sm font-semibold" style={{ color: group.color }}>
-                  {groupCounts[group.id] || 0}
-                </span>
-                <span className="text-xs" style={{ color: group.color }}>
-                  {group.display_name}
-                </span>
               </div>
-            ))}
-          </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="p-0 flex-1 overflow-hidden">
-        {users.length === 0 ? (
-          <div className="text-center py-16 px-6">
-            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="h-10 w-10 text-slate-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Nenhum usuário encontrado</h3>
-            <p className="text-slate-600">Adicione usuários para começar a usar o sistema.</p>
-          </div>
-        ) : (
-          <ScrollArea className="h-full">
-            <div className="divide-y divide-slate-100">
-              {users.map((user, index) => {
-                const group = user.group_id ? groupsMap[user.group_id] : null;
-                
-                console.log(`👤 UsersList: Renderizando usuário ${user.name}:`, {
-                  user,
-                  group,
-                  group_id: user.group_id
-                });
-                
-                return (
-                  <div key={user.id} className="p-6 hover:bg-slate-50/50 transition-colors duration-150">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        {/* User Avatar */}
-                        <div className={`relative p-3 rounded-xl`} style={{ 
-                          backgroundColor: group ? `${group.color}20` : '#f1f5f9'
-                        }}>
+
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {filteredUsers.map((user: any) => (
+                    <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
                           <div 
-                            className="h-6 w-6 rounded-full flex items-center justify-center"
-                            style={{ 
-                              backgroundColor: group ? group.color : '#64748b',
-                              color: 'white'
-                            }}
-                          >
-                            {user.name.charAt(0).toUpperCase()}
-                          </div>
-                          {user.active && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-                              <UserCheck className="h-2 w-2 text-white" />
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: user.groups?.color || '#gray' }}
+                          />
+                          <div>
+                            <p className="font-medium">{user.name}</p>
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <span>{user.groups?.display_name || 'Sem grupo'}</span>
+                              {user.matricula && (
+                                <>
+                                  <span>•</span>
+                                  <span>Matrícula: {user.matricula}</span>
+                                </>
+                              )}
                             </div>
-                          )}
-                        </div>
-                        
-                        {/* User Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-1">
-                            <h4 className="text-lg font-semibold text-slate-900 truncate">{user.name}</h4>
-                            {group && (
-                              <Badge 
-                                variant="outline"
-                                className="px-2 py-1 text-xs font-medium border"
-                                style={{ 
-                                  backgroundColor: `${group.color}20`,
-                                  color: group.color,
-                                  borderColor: `${group.color}40`
-                                }}
-                              >
-                                {group.display_name}
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center gap-4 text-sm text-slate-600">
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              <span>Cadastrado em {new Date(user.created_at).toLocaleDateString('pt-BR')}</span>
-                            </div>
-                            {user.active && (
-                              <div className="flex items-center gap-1 text-green-600">
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span className="font-medium">Ativo</span>
-                              </div>
-                            )}
+                            <p className={`text-xs ${user.active ? 'text-green-600' : 'text-red-600'}`}>
+                              {user.active ? 'Ativo' : 'Inativo'}
+                            </p>
                           </div>
                         </div>
                       </div>
-                      
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex gap-2">
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => onEditUser(user)}
-                          className="h-9 w-9 p-0 border-slate-300 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
+                          onClick={() => handleEditUser(user)}
+                          disabled={loading}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit2 className="h-4 w-4" />
                         </Button>
                         <Button 
                           size="sm" 
-                          variant="outline"
-                          onClick={() => onDeleteUser(user)}
-                          className="h-9 w-9 p-0 border-slate-300 hover:bg-red-50 hover:border-red-300 hover:text-red-600"
+                          variant="destructive"
+                          onClick={() => handleDeleteUser(user.id, user.name)}
+                          disabled={loading}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  ))}
+                  
+                  {filteredUsers.length === 0 && (
+                    <p className="text-center py-4 text-gray-500">
+                      {searchTerm ? 'Nenhum usuário encontrado para sua busca.' : 'Nenhum usuário encontrado.'}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
-          </ScrollArea>
-        )}
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Edit User Dialog */}
+      {selectedUser && (
+        <EditUserDialog
+          user={selectedUser}
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setSelectedUser(null);
+          }}
+          onUserUpdated={fetchUsers}
+        />
+      )}
+    </div>
   );
 };
 
