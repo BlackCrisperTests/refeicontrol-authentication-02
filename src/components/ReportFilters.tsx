@@ -33,9 +33,11 @@ const ReportFiltersComponent = ({
   const { groups } = useGroups();
 
   const updateFilter = (key: keyof ReportFilters, value: string) => {
+    // Convert "all" back to undefined for the filter logic
+    const filterValue = value === "all" ? undefined : value;
     onFiltersChange({
       ...filters,
-      [key]: value || undefined,
+      [key]: filterValue,
     });
   };
 
@@ -74,14 +76,14 @@ const ReportFiltersComponent = ({
           <div className="space-y-2">
             <Label>Grupo Específico</Label>
             <Select 
-              value={filters.groupId || ''} 
+              value={filters.groupId || 'all'} 
               onValueChange={(value) => updateFilter('groupId', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um grupo..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os grupos</SelectItem>
+                <SelectItem value="all">Todos os grupos</SelectItem>
                 {groups.map((group) => (
                   <SelectItem key={group.id} value={group.id}>
                     {group.display_name}
@@ -94,14 +96,14 @@ const ReportFiltersComponent = ({
           <div className="space-y-2">
             <Label>Tipo de Grupo (Legacy)</Label>
             <Select 
-              value={filters.group || ''} 
+              value={filters.group || 'all'} 
               onValueChange={(value) => updateFilter('group', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o tipo..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os tipos</SelectItem>
+                <SelectItem value="all">Todos os tipos</SelectItem>
                 <SelectItem value="operacao">Operação</SelectItem>
                 <SelectItem value="projetos">Projetos</SelectItem>
               </SelectContent>
@@ -111,14 +113,14 @@ const ReportFiltersComponent = ({
           <div className="space-y-2">
             <Label>Usuário</Label>
             <Select 
-              value={filters.user || ''} 
+              value={filters.user || 'all'} 
               onValueChange={(value) => updateFilter('user', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um usuário..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os usuários</SelectItem>
+                <SelectItem value="all">Todos os usuários</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.name} value={user.name}>
                     {user.name}
