@@ -1,6 +1,6 @@
 
 export type GroupType = 'operacao' | 'projetos';
-export type MealType = 'breakfast' | 'lunch';
+export type MealType = 'breakfast' | 'lunch' | 'dinner';
 
 export interface Group {
   id: string;
@@ -50,5 +50,7 @@ export interface SystemSettings {
   breakfast_deadline: string;
   lunch_start_time?: string;
   lunch_deadline: string;
+  dinner_start_time?: string;
+  dinner_deadline: string;
   updated_at: string;
 }

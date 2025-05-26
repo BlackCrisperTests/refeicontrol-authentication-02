@@ -15,6 +15,8 @@ const SystemSettings = () => {
   const [breakfastDeadline, setBreakfastDeadline] = useState('');
   const [lunchStartTime, setLunchStartTime] = useState('11:00');
   const [lunchDeadline, setLunchDeadline] = useState('');
+  const [dinnerStartTime, setDinnerStartTime] = useState('17:00');
+  const [dinnerDeadline, setDinnerDeadline] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -38,6 +40,8 @@ const SystemSettings = () => {
       setBreakfastDeadline(data.breakfast_deadline);
       setLunchStartTime(data.lunch_start_time || '11:00');
       setLunchDeadline(data.lunch_deadline);
+      setDinnerStartTime(data.dinner_start_time || '17:00');
+      setDinnerDeadline(data.dinner_deadline);
     } catch (error: any) {
       console.error('Error fetching settings:', error);
       toast({
@@ -62,6 +66,8 @@ const SystemSettings = () => {
           breakfast_deadline: breakfastDeadline,
           lunch_start_time: lunchStartTime,
           lunch_deadline: lunchDeadline,
+          dinner_start_time: dinnerStartTime,
+          dinner_deadline: dinnerDeadline,
           updated_at: new Date().toISOString()
         })
         .eq('id', settings.id);
@@ -80,6 +86,8 @@ const SystemSettings = () => {
         breakfast_deadline: breakfastDeadline,
         lunch_start_time: lunchStartTime,
         lunch_deadline: lunchDeadline,
+        dinner_start_time: dinnerStartTime,
+        dinner_deadline: dinnerDeadline,
         updated_at: new Date().toISOString()
       });
     } catch (error: any) {
@@ -186,6 +194,44 @@ const SystemSettings = () => {
               />
               <p className="text-xs text-gray-600">
                 Almoço pode ser registrado até este horário
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Janta */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="h-4 w-4 text-purple-600" />
+            <h3 className="text-lg font-semibold text-purple-600">Janta</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
+            <div className="space-y-2">
+              <Label htmlFor="dinnerStartTime">Horário de Início</Label>
+              <Input
+                id="dinnerStartTime"
+                type="time"
+                value={dinnerStartTime}
+                onChange={(e) => setDinnerStartTime(e.target.value)}
+                disabled={saving}
+              />
+              <p className="text-xs text-gray-600">
+                A partir deste horário é possível registrar janta
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dinnerDeadline">Horário Limite</Label>
+              <Input
+                id="dinnerDeadline"
+                type="time"
+                value={dinnerDeadline}
+                onChange={(e) => setDinnerDeadline(e.target.value)}
+                disabled={saving}
+              />
+              <p className="text-xs text-gray-600">
+                Janta pode ser registrada até este horário
               </p>
             </div>
           </div>
