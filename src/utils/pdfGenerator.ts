@@ -1,7 +1,7 @@
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { MealRecord, User } from '@/types/database.types';
+import { MealRecord, User, Group } from '@/types/database.types';
 
 export interface ReportData {
   title: string;
@@ -94,17 +94,23 @@ export const generatePDF = (reportData: ReportData): void => {
   doc.save(fileName);
 };
 
-export const formatMealRecordForReport = (record: MealRecord) => ({
-  data: record.meal_date,
-  nome: record.user_name,
-  grupo: record.group_type === 'operacao' ? 'Operação' : 'Projetos',
-  refeicao: record.meal_type === 'breakfast' ? 'Café da Manhã' : 'Almoço',
-  horario: record.meal_time,
-});
+export const formatMealRecordForReport = (record: MealRecord, groups: Group[]) => {
+  const group = groups.find(g => g.name === record.group_type);
+  return {
+    data: record.meal_date,
+    nome: record.user_name,
+    grupo: group?.display_name || record.group_type,
+    refeicao: record.meal_type === 'breakfast' ? 'Café da Manhã' : 'Almoço',
+    horario: record.meal_time,
+  };
+};
 
-export const formatUserForReport = (user: User) => ({
-  nome: user.name,
-  grupo: user.group_type === 'operacao' ? 'Operação' : 'Projetos',
-  status: user.active ? 'Ativo' : 'Inativo',
-  cadastro: new Date(user.created_at).toLocaleDateString('pt-BR'),
-});
+export const formatUserForReport = (user: User, groups: Group[]) => {
+  const group = groups.find(g => g.name === user.group_type);
+  return {
+    nome: user.name,
+    grupo: group?.display_name || user.group_type,
+    status: user.active ? 'Ativo' : 'Inativo',
+    cadastro: new Date(user.created_at).toLocaleDateString('pt-BR'),
+  };
+};

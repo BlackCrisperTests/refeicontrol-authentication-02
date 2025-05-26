@@ -7,14 +7,16 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { generatePDF, formatMealRecordForReport, formatUserForReport } from '@/utils/pdfGenerator';
 import { useAdminSession } from '@/hooks/useAdminSession';
-import { MealRecord, User, GroupType } from '@/types/database.types';
+import { MealRecord, User, GroupType, Group } from '@/types/database.types';
 import ReportFiltersComponent, { ReportFilters } from './ReportFilters';
+import { useGroups } from '@/hooks/useGroups';
 
 const ReportsSection = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const [filters, setFilters] = useState<ReportFilters>({});
   const [users, setUsers] = useState<Array<{ name: string; group_type: GroupType }>>([]);
   const adminSession = useAdminSession();
+  const { groups } = useGroups();
 
   // Fetch users for filter dropdown
   useEffect(() => {
@@ -70,7 +72,8 @@ const ReportsSection = () => {
     }
     
     if (filters.group) {
-      descriptions.push(filters.group === 'operacao' ? 'Grupo Operação' : 'Grupo Projetos');
+      const group = groups.find(g => g.name === filters.group);
+      descriptions.push(group?.display_name || filters.group);
     }
     
     if (filters.date) {
@@ -101,7 +104,7 @@ const ReportsSection = () => {
       const reportData = {
         title: 'Relatório Personalizado',
         subtitle: `Refeições${getFilterDescription()}`,
-        data: records.map(formatMealRecordForReport),
+        data: records.map(record => formatMealRecordForReport(record, groups)),
         columns: [
           { header: 'Data', dataKey: 'data' },
           { header: 'Nome', dataKey: 'nome' },
@@ -147,7 +150,7 @@ const ReportsSection = () => {
       const reportData = {
         title: 'Relatório Diário',
         subtitle: `Refeições do dia ${new Date(today).toLocaleDateString('pt-BR')}`,
-        data: records.map(formatMealRecordForReport),
+        data: records.map(record => formatMealRecordForReport(record, groups)),
         columns: [
           { header: 'Nome', dataKey: 'nome' },
           { header: 'Grupo', dataKey: 'grupo' },
@@ -217,7 +220,7 @@ const ReportsSection = () => {
       const reportData = {
         title: 'Relatório Mensal',
         subtitle: `Refeições do mês ${monthName}${getFilterDescription()}`,
-        data: records.map(formatMealRecordForReport),
+        data: records.map(record => formatMealRecordForReport(record, groups)),
         columns: [
           { header: 'Data', dataKey: 'data' },
           { header: 'Nome', dataKey: 'nome' },
@@ -302,7 +305,7 @@ const ReportsSection = () => {
       }, {});
 
       const userData = users.map(user => ({
-        ...formatUserForReport(user),
+        ...formatUserForReport(user, groups),
         cafe: mealCounts[user.name]?.breakfast || 0,
         almoco: mealCounts[user.name]?.lunch || 0,
         total: (mealCounts[user.name]?.breakfast || 0) + (mealCounts[user.name]?.lunch || 0),
@@ -377,12 +380,13 @@ const ReportsSection = () => {
 
       // Agrupar por grupo e tipo de refeição
       const groupStats = records.reduce((acc: any, record) => {
-        const group = record.group_type === 'operacao' ? 'Operação' : 'Projetos';
+        const group = groups.find(g => g.name === record.group_type);
+        const groupName = group?.display_name || record.group_type;
         const meal = record.meal_type === 'breakfast' ? 'Café da Manhã' : 'Almoço';
-        const key = `${group} - ${meal}`;
+        const key = `${groupName} - ${meal}`;
         
         if (!acc[key]) {
-          acc[key] = { grupo: group, refeicao: meal, total: 0, usuarios: new Set() };
+          acc[key] = { grupo: groupName, refeicao: meal, total: 0, usuarios: new Set() };
         }
         
         acc[key].total++;
