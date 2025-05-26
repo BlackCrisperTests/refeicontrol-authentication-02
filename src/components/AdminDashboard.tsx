@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -590,12 +589,7 @@ const AdminDashboard = () => {
               </Card>
 
               {/* Users List */}
-              <UsersList 
-                users={users} 
-                loading={loading} 
-                onEditUser={openEditDialog} 
-                onDeleteUser={confirmDeleteUser} 
-              />
+              <UsersList />
             </div>
           </TabsContent>
 
