@@ -21,6 +21,14 @@ const PublicAccess = () => {
   const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Helper function to validate user names
+  const isValidUserName = (name: any): boolean => {
+    return name && 
+           typeof name === 'string' && 
+           name.trim() !== '' && 
+           name.trim().length > 0;
+  };
+
   // Fetch users from Supabase
   useEffect(() => {
     const fetchUsers = async () => {
@@ -39,18 +47,27 @@ const PublicAccess = () => {
         return;
       }
 
+      console.log('Raw user data from database:', data);
+
       const groupedUsers: {[key in GroupType]: string[]} = {
         operacao: [],
         projetos: []
       };
 
-      data.forEach((user: { name: string, group_type: GroupType }) => {
-        // Filter out empty or null names to prevent Select.Item errors
-        if (user.name && user.name.trim() && groupedUsers[user.group_type]) {
-          groupedUsers[user.group_type].push(user.name);
+      data?.forEach((user: { name: string, group_type: GroupType }) => {
+        console.log('Processing user:', user);
+        
+        // Only add users with valid names
+        if (isValidUserName(user.name) && groupedUsers[user.group_type]) {
+          const trimmedName = user.name.trim();
+          console.log('Adding valid user:', trimmedName, 'to group:', user.group_type);
+          groupedUsers[user.group_type].push(trimmedName);
+        } else {
+          console.warn('Skipping invalid user:', user);
         }
       });
 
+      console.log('Final grouped users:', groupedUsers);
       setUsers(groupedUsers);
     };
 
@@ -86,11 +103,13 @@ const PublicAccess = () => {
   
   const filteredUsers = selectedGroup 
     ? users[selectedGroup].filter(name => 
-        name && name.trim() && name.toLowerCase().includes(searchTerm.toLowerCase())
+        isValidUserName(name) && name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : allUsers.filter(name => 
-        name && name.trim() && name.toLowerCase().includes(searchTerm.toLowerCase())
+        isValidUserName(name) && name.toLowerCase().includes(searchTerm.toLowerCase())
       );
+
+  console.log('Filtered users for rendering:', filteredUsers);
 
   const canRegisterBreakfast = systemSettings 
     ? currentTime.getHours() < parseInt(systemSettings.breakfast_deadline.split(':')[0]) || 
@@ -288,12 +307,19 @@ const PublicAccess = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {filteredUsers
-                      .filter(name => name && name.trim()) // Additional safety check
-                      .map((name) => (
-                        <SelectItem key={name} value={name}>
-                          {name}
-                        </SelectItem>
-                      ))}
+                      .filter(name => {
+                        const isValid = isValidUserName(name);
+                        console.log('Filtering for SelectItem - name:', name, 'isValid:', isValid);
+                        return isValid;
+                      })
+                      .map((name) => {
+                        console.log('Rendering SelectItem for:', name);
+                        return (
+                          <SelectItem key={name} value={name}>
+                            {name}
+                          </SelectItem>
+                        );
+                      })}
                     <SelectItem value="outros">Outros (digitar nome)</SelectItem>
                   </SelectContent>
                 </Select>
