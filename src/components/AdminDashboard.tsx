@@ -17,7 +17,6 @@ import MealRecordsTable from './MealRecordsTable';
 import AdminUsersManagement from './AdminUsersManagement';
 import UsersList from './UsersList';
 import ReportsSection from './ReportsSection';
-import GroupsManagement from './GroupsManagement';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -382,7 +381,7 @@ const AdminDashboard = () => {
         {/* Professional Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2">
-            <TabsList className="grid w-full grid-cols-6 bg-transparent gap-1">
+            <TabsList className="grid w-full grid-cols-5 bg-transparent gap-1">
               <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Usuários</span>
@@ -390,10 +389,6 @@ const AdminDashboard = () => {
               <TabsTrigger value="records" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <Calendar className="h-4 w-4" />
                 <span className="hidden sm:inline">Registros</span>
-              </TabsTrigger>
-              <TabsTrigger value="groups" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
-                <Building2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Grupos</span>
               </TabsTrigger>
               <TabsTrigger value="settings" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <Settings className="h-4 w-4" />
@@ -459,11 +454,6 @@ const AdminDashboard = () => {
             <MealRecordsTable records={mealRecords} loading={loading} onRecordsUpdated={fetchMealRecords} />
           </TabsContent>
 
-          {/* Groups Tab */}
-          <TabsContent value="groups">
-            <GroupsManagement />
-          </TabsContent>
-
           {/* Settings Tab */}
           <TabsContent value="settings">
             <SystemSettings />
@@ -481,53 +471,10 @@ const AdminDashboard = () => {
         </Tabs>
 
         {/* Edit User Dialog */}
-        {editingUser && (
-          <EditUserDialog 
-            user={editingUser} 
-            groups={[]} 
-            isOpen={showEditDialog} 
-            onClose={() => {
-              setShowEditDialog(false);
-              setEditingUser(null);
-            }} 
-            onSave={async (updatedUser) => {
-              // Handle user update logic here
-              setLoading(true);
-              try {
-                const { error } = await supabase
-                  .from('users')
-                  .update({
-                    name: updatedUser.name,
-                    group_id: updatedUser.group_id,
-                    group_type: updatedUser.group_type,
-                    active: updatedUser.active
-                  })
-                  .eq('id', updatedUser.id);
-
-                if (error) throw error;
-
-                toast({
-                  title: "Usuário atualizado",
-                  description: `${updatedUser.name} foi atualizado com sucesso.`,
-                });
-
-                setShowEditDialog(false);
-                setEditingUser(null);
-                fetchUsers();
-              } catch (error: any) {
-                console.error('Error updating user:', error);
-                toast({
-                  title: "Erro ao atualizar usuário",
-                  description: error.message,
-                  variant: "destructive"
-                });
-              } finally {
-                setLoading(false);
-              }
-            }}
-            onUserUpdated={fetchUsers} 
-          />
-        )}
+        <EditUserDialog user={editingUser} isOpen={showEditDialog} onClose={() => {
+        setShowEditDialog(false);
+        setEditingUser(null);
+      }} onUserUpdated={fetchUsers} />
 
         {/* Password Confirmation Dialog */}
         <PasswordConfirmDialog isOpen={showPasswordDialog} onClose={() => {
