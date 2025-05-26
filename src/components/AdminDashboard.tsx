@@ -481,10 +481,51 @@ const AdminDashboard = () => {
         </Tabs>
 
         {/* Edit User Dialog */}
-        <EditUserDialog user={editingUser} isOpen={showEditDialog} onClose={() => {
-        setShowEditDialog(false);
-        setEditingUser(null);
-      }} onUserUpdated={fetchUsers} />
+        <EditUserDialog 
+          user={editingUser} 
+          groups={[]} 
+          isOpen={showEditDialog} 
+          onClose={() => {
+            setShowEditDialog(false);
+            setEditingUser(null);
+          }} 
+          onSave={async (updatedUser) => {
+            // Handle user update logic here
+            setLoading(true);
+            try {
+              const { error } = await supabase
+                .from('users')
+                .update({
+                  name: updatedUser.name,
+                  group_id: updatedUser.group_id,
+                  group_type: updatedUser.group_type,
+                  active: updatedUser.active
+                })
+                .eq('id', updatedUser.id);
+
+              if (error) throw error;
+
+              toast({
+                title: "Usuário atualizado",
+                description: `${updatedUser.name} foi atualizado com sucesso.`,
+              });
+
+              setShowEditDialog(false);
+              setEditingUser(null);
+              fetchUsers();
+            } catch (error: any) {
+              console.error('Error updating user:', error);
+              toast({
+                title: "Erro ao atualizar usuário",
+                description: error.message,
+                variant: "destructive"
+              });
+            } finally {
+              setLoading(false);
+            }
+          }}
+          onUserUpdated={fetchUsers} 
+        />
 
         {/* Password Confirmation Dialog */}
         <PasswordConfirmDialog isOpen={showPasswordDialog} onClose={() => {

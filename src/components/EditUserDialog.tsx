@@ -13,8 +13,8 @@ interface EditUserDialogProps {
   groups: Group[];
   isOpen: boolean;
   onClose: () => void;
-  onSave: (user: User) => void;
-  onUserUpdated: () => Promise<void>;
+  onSave: (user: User) => void | Promise<void>;
+  onUserUpdated?: () => Promise<void>;
 }
 
 const EditUserDialog = ({ user, groups, isOpen, onClose, onSave, onUserUpdated }: EditUserDialogProps) => {
@@ -25,8 +25,10 @@ const EditUserDialog = ({ user, groups, isOpen, onClose, onSave, onUserUpdated }
   }, [user]);
 
   const handleSave = async () => {
-    onSave(editedUser);
-    await onUserUpdated();
+    await onSave(editedUser);
+    if (onUserUpdated) {
+      await onUserUpdated();
+    }
   };
 
   const handleGroupChange = (groupId: string) => {
