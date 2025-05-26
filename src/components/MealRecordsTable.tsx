@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -28,7 +27,7 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
   const [filterGroup, setFilterGroup] = useState<string>('all');
   const [filterMeal, setFilterMeal] = useState<string>('all');
   const [filterDate, setFilterDate] = useState<string>('');
-  const [filterMonth, setFilterMonth] = useState<string>('');
+  const [filterMonth, setFilterMonth] = useState<string>('all');
   
   // Paginação
   const [currentPage, setCurrentPage] = useState(1);
@@ -100,7 +99,7 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
       
       // Filtro por mês
       let matchesMonth = true;
-      if (filterMonth) {
+      if (filterMonth && filterMonth !== 'all') {
         const recordDate = new Date(record.meal_date);
         const recordMonthKey = `${recordDate.getFullYear()}-${String(recordDate.getMonth() + 1).padStart(2, '0')}`;
         matchesMonth = recordMonthKey === filterMonth;
@@ -130,7 +129,7 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
     setFilterGroup('all');
     setFilterMeal('all');
     setFilterDate('');
-    setFilterMonth('');
+    setFilterMonth('all');
     setCurrentPage(1);
   };
 
@@ -242,7 +241,7 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
                 <SelectValue placeholder="Todos os meses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os meses</SelectItem>
+                <SelectItem value="all">Todos os meses</SelectItem>
                 {availableMonths.map((month) => (
                   <SelectItem key={month.value} value={month.value}>
                     {month.label}
