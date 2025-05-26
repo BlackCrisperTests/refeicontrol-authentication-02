@@ -17,6 +17,7 @@ import MealRecordsTable from './MealRecordsTable';
 import AdminUsersManagement from './AdminUsersManagement';
 import UsersList from './UsersList';
 import ReportsSection from './ReportsSection';
+import GroupsManagement from './GroupsManagement';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -381,7 +382,7 @@ const AdminDashboard = () => {
         {/* Professional Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2">
-            <TabsList className="grid w-full grid-cols-5 bg-transparent gap-1">
+            <TabsList className="grid w-full grid-cols-6 bg-transparent gap-1">
               <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Usuários</span>
@@ -389,6 +390,10 @@ const AdminDashboard = () => {
               <TabsTrigger value="records" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <Calendar className="h-4 w-4" />
                 <span className="hidden sm:inline">Registros</span>
+              </TabsTrigger>
+              <TabsTrigger value="groups" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
+                <Building2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Grupos</span>
               </TabsTrigger>
               <TabsTrigger value="settings" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <Settings className="h-4 w-4" />
@@ -452,6 +457,11 @@ const AdminDashboard = () => {
           {/* Records Tab */}
           <TabsContent value="records">
             <MealRecordsTable records={mealRecords} loading={loading} onRecordsUpdated={fetchMealRecords} />
+          </TabsContent>
+
+          {/* Groups Tab */}
+          <TabsContent value="groups">
+            <GroupsManagement />
           </TabsContent>
 
           {/* Settings Tab */}
