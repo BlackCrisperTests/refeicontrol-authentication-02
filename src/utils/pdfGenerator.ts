@@ -1,13 +1,7 @@
 
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { MealRecord, User } from '@/types/database.types';
-
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
 
 export interface ReportData {
   title: string;
@@ -43,7 +37,7 @@ export const generatePDF = (reportData: ReportData): void => {
   doc.line(20, 80, 190, 80);
   
   // Tabela com dados
-  doc.autoTable({
+  autoTable(doc, {
     head: [reportData.columns.map(col => col.header)],
     body: reportData.data.map(row => 
       reportData.columns.map(col => row[col.dataKey] || '-')
