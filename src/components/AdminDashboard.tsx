@@ -528,69 +528,7 @@ const AdminDashboard = () => {
 
           {/* Users Tab */}
           <TabsContent value="users">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Add User */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Plus className="h-5 w-5" />
-                    Adicionar Usuário
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="newUserName">Nome Completo</Label>
-                    <Input
-                      id="newUserName"
-                      value={newUserName}
-                      onChange={(e) => setNewUserName(e.target.value)}
-                      placeholder="Digite o nome..."
-                      disabled={loading}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="newUserGroup">Grupo</Label>
-                    <Select 
-                      value={newUserGroupId} 
-                      onValueChange={setNewUserGroupId}
-                      disabled={loading}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o grupo..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {groups.map((group) => (
-                          <SelectItem key={group.id} value={group.id}>
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: group.color }}
-                              />
-                              {group.display_name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Button onClick={handleAddUser} className="w-full" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Adicionando...
-                      </>
-                    ) : (
-                      'Adicionar Usuário'
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Users List */}
-              <UsersList />
-            </div>
+            <UsersList />
           </TabsContent>
 
           {/* Records Tab */}
