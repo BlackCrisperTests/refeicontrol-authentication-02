@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,6 @@ const AdminDashboard = () => {
   const [lunchToday, setLunchToday] = useState(0);
   const [breakfastMonth, setBreakfastMonth] = useState(0);
   const [lunchMonth, setLunchMonth] = useState(0);
-  const [groupStats, setGroupStats] = useState<{[key: string]: number}>({});
 
   // Verificar autenticação
   useEffect(() => {
@@ -80,52 +80,83 @@ const AdminDashboard = () => {
 
   // Fetch users from Supabase
   const fetchUsers = async () => {
+    console.log('🔍 Iniciando busca de usuários...');
     setLoading(true);
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .order('name');
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select(`
+          *,
+          groups:group_id (
+            id,
+            name,
+            display_name,
+            color
+          )
+        `)
+        .order('name');
 
-    if (error) {
-      console.error('Error fetching users:', error);
+      console.log('📊 Resultado da busca de usuários:', { data, error });
+
+      if (error) {
+        console.error('❌ Erro ao buscar usuários:', error);
+        throw error;
+      }
+
+      console.log('✅ Usuários carregados com sucesso:', data?.length || 0, 'usuários');
+      setUsers(data as User[]);
+    } catch (error: any) {
+      console.error('💥 Erro na função fetchUsers:', error);
       toast({
         title: "Erro ao carregar usuários",
         description: error.message,
         variant: "destructive"
       });
-    } else {
-      setUsers(data as User[]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Fetch meal records from Supabase
   const fetchMealRecords = async () => {
+    console.log('🔍 Iniciando busca de registros de refeições...');
     setLoading(true);
-    const { data, error } = await supabase
-      .from('meal_records')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('meal_records')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching meal records:', error);
+      console.log('📊 Resultado da busca de registros:', { data, error });
+
+      if (error) {
+        console.error('❌ Erro ao buscar registros:', error);
+        throw error;
+      }
+
+      console.log('✅ Registros carregados com sucesso:', data?.length || 0, 'registros');
+      setMealRecords(data as MealRecord[]);
+    } catch (error: any) {
+      console.error('💥 Erro na função fetchMealRecords:', error);
       toast({
         title: "Erro ao carregar registros",
         description: error.message,
         variant: "destructive"
       });
-    } else {
-      setMealRecords(data as MealRecord[]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Fetch today's and monthly stats
   const fetchStats = async () => {
+    console.log('🔍 Iniciando busca de estatísticas...');
     setStatsLoading(true);
     const today = new Date().toISOString().split('T')[0];
     const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
     const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
+    
+    console.log('📅 Datas para estatísticas:', { today, startOfMonth, endOfMonth });
     
     try {
       // Breakfast count today
@@ -162,12 +193,19 @@ const AdminDashboard = () => {
         .eq('meal_type', 'lunch');
       if (lunchMonthError) throw lunchMonthError;
 
+      console.log('📊 Estatísticas calculadas:', {
+        breakfastToday: breakfastTodayData.length,
+        lunchToday: lunchTodayData.length,
+        breakfastMonth: breakfastMonthData.length,
+        lunchMonth: lunchMonthData.length
+      });
+
       setBreakfastToday(breakfastTodayData.length);
       setLunchToday(lunchTodayData.length);
       setBreakfastMonth(breakfastMonthData.length);
       setLunchMonth(lunchMonthData.length);
     } catch (error: any) {
-      console.error('Error fetching stats:', error);
+      console.error('💥 Erro ao buscar estatísticas:', error);
       toast({
         title: "Erro ao carregar estatísticas",
         description: error.message,
@@ -177,6 +215,22 @@ const AdminDashboard = () => {
       setStatsLoading(false);
     }
   };
+
+  // Carregar dados iniciais
+  useEffect(() => {
+    console.log('🚀 Componente AdminDashboard montado, carregando dados...');
+    fetchUsers();
+    fetchMealRecords();
+    fetchStats();
+  }, []);
+
+  // Atualizar stats quando mealRecords mudarem
+  useEffect(() => {
+    if (mealRecords.length > 0) {
+      console.log('🔄 Registros atualizados, recalculando estatísticas...');
+      fetchStats();
+    }
+  }, [mealRecords]);
 
   const handleLogout = () => {
     localStorage.removeItem('admin_session');
@@ -197,10 +251,12 @@ const AdminDashboard = () => {
       return;
     }
 
+    console.log('👤 Adicionando novo usuário:', { newUserName, newUserGroupId });
     setLoading(true);
     
     try {
       const selectedGroup = groups.find(g => g.id === newUserGroupId);
+      console.log('🏷️ Grupo selecionado:', selectedGroup);
       
       // Check if user already exists
       const { data: existingUser } = await supabase
@@ -229,8 +285,12 @@ const AdminDashboard = () => {
           group_type: selectedGroup?.name as any
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao inserir usuário:', error);
+        throw error;
+      }
 
+      console.log('✅ Usuário adicionado com sucesso');
       toast({
         title: "Usuário adicionado",
         description: `${newUserName} foi adicionado com sucesso.`
@@ -241,7 +301,7 @@ const AdminDashboard = () => {
       setNewUserGroupId('');
       fetchUsers();
     } catch (error: any) {
-      console.error('Error adding user:', error);
+      console.error('💥 Erro ao adicionar usuário:', error);
       toast({
         title: "Erro ao adicionar usuário",
         description: error.message,
@@ -260,6 +320,7 @@ const AdminDashboard = () => {
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
 
+    console.log('🗑️ Removendo usuário:', userToDelete.id);
     setLoading(true);
     try {
       // Delete user
@@ -268,8 +329,12 @@ const AdminDashboard = () => {
         .delete()
         .eq('id', userToDelete.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao remover usuário:', error);
+        throw error;
+      }
 
+      console.log('✅ Usuário removido com sucesso');
       toast({
         title: "Usuário removido",
         description: "Usuário removido com sucesso."
@@ -278,7 +343,7 @@ const AdminDashboard = () => {
       // Refresh users
       fetchUsers();
     } catch (error: any) {
-      console.error('Error deleting user:', error);
+      console.error('💥 Erro ao remover usuário:', error);
       toast({
         title: "Erro ao remover usuário",
         description: error.message,
@@ -294,6 +359,14 @@ const AdminDashboard = () => {
     setEditingUser(user);
     setShowEditDialog(true);
   };
+
+  console.log('🎯 Estado atual do componente:', {
+    usersCount: users.length,
+    mealRecordsCount: mealRecords.length,
+    groupsCount: groups.length,
+    loading,
+    statsLoading
+  });
 
   return (
     <div className="min-h-screen bg-slate-50">

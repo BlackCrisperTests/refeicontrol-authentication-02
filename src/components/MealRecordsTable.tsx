@@ -29,6 +29,15 @@ const MealRecordsTable = ({
   const [deleting, setDeleting] = useState(false);
   const { groups } = useGroups();
 
+  console.log('📋 MealRecordsTable: Props recebidas:', {
+    recordsCount: records.length,
+    loading,
+    groupsCount: groups.length
+  });
+
+  console.log('📋 MealRecordsTable: Dados dos registros:', records);
+  console.log('🏷️ MealRecordsTable: Dados dos grupos:', groups);
+
   // Filtros
   const [searchName, setSearchName] = useState('');
   const [filterGroup, setFilterGroup] = useState<string>('all');
@@ -97,7 +106,12 @@ const MealRecordsTable = ({
 
   // Filtrar registros
   const filteredRecords = useMemo(() => {
-    return records.filter(record => {
+    console.log('🔍 MealRecordsTable: Filtrando registros...', {
+      totalRecords: records.length,
+      filters: { searchName, filterGroup, filterMeal, filterDate, filterMonth }
+    });
+
+    const filtered = records.filter(record => {
       const matchesName = record.user_name.toLowerCase().includes(searchName.toLowerCase());
       const matchesGroup = filterGroup === 'all' || record.group_type === filterGroup;
       const matchesMeal = filterMeal === 'all' || record.meal_type === filterMeal;
@@ -112,6 +126,9 @@ const MealRecordsTable = ({
       }
       return matchesName && matchesGroup && matchesMeal && matchesDate && matchesMonth;
     });
+
+    console.log('✅ MealRecordsTable: Registros filtrados:', filtered.length);
+    return filtered;
   }, [records, searchName, filterGroup, filterMeal, filterDate, filterMonth]);
 
   // Paginação
@@ -121,6 +138,11 @@ const MealRecordsTable = ({
 
   // Estatísticas dos registros filtrados - agora dinâmica para todos os grupos
   const stats = useMemo(() => {
+    console.log('📊 MealRecordsTable: Calculando estatísticas...', {
+      filteredRecordsCount: filteredRecords.length,
+      groupsCount: groups.length
+    });
+
     const breakfastCount = filteredRecords.filter(r => r.meal_type === 'breakfast').length;
     const lunchCount = filteredRecords.filter(r => r.meal_type === 'lunch').length;
     
@@ -130,11 +152,14 @@ const MealRecordsTable = ({
       return acc;
     }, {} as Record<string, number>);
 
-    return {
+    const calculatedStats = {
       breakfastCount,
       lunchCount,
       ...groupStats
     };
+
+    console.log('📊 MealRecordsTable: Estatísticas calculadas:', calculatedStats);
+    return calculatedStats;
   }, [filteredRecords, groups]);
 
   const clearFilters = () => {

@@ -18,6 +18,15 @@ interface UsersListProps {
 const UsersList = ({ users, loading, onEditUser, onDeleteUser }: UsersListProps) => {
   const { groups } = useGroups();
 
+  console.log('👥 UsersList: Props recebidas:', {
+    usersCount: users.length,
+    loading,
+    groupsCount: groups.length
+  });
+
+  console.log('👥 UsersList: Dados dos usuários:', users);
+  console.log('🏷️ UsersList: Dados dos grupos:', groups);
+
   if (loading) {
     return (
       <Card className="border-0 shadow-sm h-[600px]">
@@ -37,6 +46,8 @@ const UsersList = ({ users, loading, onEditUser, onDeleteUser }: UsersListProps)
     return acc;
   }, {} as Record<string, any>);
 
+  console.log('🗺️ UsersList: Mapa de grupos:', groupsMap);
+
   // Group counts using the new group system
   const groupCounts = users.reduce((acc, user) => {
     const group = user.group_id ? groupsMap[user.group_id] : null;
@@ -45,6 +56,8 @@ const UsersList = ({ users, loading, onEditUser, onDeleteUser }: UsersListProps)
     }
     return acc;
   }, {} as Record<string, number>);
+
+  console.log('📊 UsersList: Contagem por grupos:', groupCounts);
 
   return (
     <Card className="border-0 shadow-sm h-[600px] flex flex-col">
@@ -100,6 +113,12 @@ const UsersList = ({ users, loading, onEditUser, onDeleteUser }: UsersListProps)
             <div className="divide-y divide-slate-100">
               {users.map((user, index) => {
                 const group = user.group_id ? groupsMap[user.group_id] : null;
+                
+                console.log(`👤 UsersList: Renderizando usuário ${user.name}:`, {
+                  user,
+                  group,
+                  group_id: user.group_id
+                });
                 
                 return (
                   <div key={user.id} className="p-6 hover:bg-slate-50/50 transition-colors duration-150">

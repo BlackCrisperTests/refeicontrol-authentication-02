@@ -9,6 +9,7 @@ export const useGroups = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchGroups = async () => {
+    console.log('🔍 useGroups: Iniciando busca de grupos...');
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -17,11 +18,17 @@ export const useGroups = () => {
         .eq('active', true)
         .order('display_name');
 
-      if (error) throw error;
+      console.log('📊 useGroups: Resultado da busca de grupos:', { data, error });
+
+      if (error) {
+        console.error('❌ useGroups: Erro ao buscar grupos:', error);
+        throw error;
+      }
       
+      console.log('✅ useGroups: Grupos carregados com sucesso:', data?.length || 0, 'grupos');
       setGroups(data as Group[]);
     } catch (error: any) {
-      console.error('Error fetching groups:', error);
+      console.error('💥 useGroups: Erro na função fetchGroups:', error);
       toast({
         title: "Erro ao carregar grupos",
         description: error.message,
@@ -33,6 +40,7 @@ export const useGroups = () => {
   };
 
   useEffect(() => {
+    console.log('🚀 useGroups: Hook montado, carregando grupos...');
     fetchGroups();
   }, []);
 
