@@ -324,8 +324,8 @@ const PublicAccess = () => {
                 <SelectContent>
                   <SelectItem value="operacao" className="h-12 text-base">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-emerald-100 rounded-lg">
-                        <Building2 className="h-5 w-5 text-emerald-600" />
+                      <div className="p-2 bg-red-100 rounded-lg">
+                        <Building2 className="h-5 w-5 text-red-600" />
                       </div>
                       <div>
                         <div className="font-medium">Operação</div>
@@ -335,8 +335,8 @@ const PublicAccess = () => {
                   </SelectItem>
                   <SelectItem value="projetos" className="h-12 text-base">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-purple-100 rounded-lg">
-                        <Users className="h-5 w-5 text-purple-600" />
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <Users className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
                         <div className="font-medium">Projetos</div>
