@@ -72,8 +72,7 @@ export const generatePDF = (reportData: ReportData) => {
 export const formatMealRecordForReport = (record: MealRecord & { groups?: any }) => {
   const mealTypeMap = {
     breakfast: 'Café da Manhã',
-    lunch: 'Almoço',
-    dinner: 'Janta'
+    lunch: 'Almoço'
   };
 
   return {

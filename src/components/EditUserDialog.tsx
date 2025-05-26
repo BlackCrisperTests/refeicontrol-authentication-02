@@ -14,17 +14,19 @@ interface EditUserDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (user: User) => void;
+  onUserUpdated: () => Promise<void>;
 }
 
-const EditUserDialog = ({ user, groups, isOpen, onClose, onSave }: EditUserDialogProps) => {
+const EditUserDialog = ({ user, groups, isOpen, onClose, onSave, onUserUpdated }: EditUserDialogProps) => {
   const [editedUser, setEditedUser] = useState<User>(user);
 
   useEffect(() => {
     setEditedUser(user);
   }, [user]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     onSave(editedUser);
+    await onUserUpdated();
   };
 
   const handleGroupChange = (groupId: string) => {

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { SystemSettings, MealType, GroupType, User } from '@/types/database.types';
-import { Coffee, Utensils, Clock, User as UserIcon, CheckCircle, Moon } from 'lucide-react';
+import { Coffee, Utensils, Clock, User as UserIcon, CheckCircle } from 'lucide-react';
 import BrandHeader from './BrandHeader';
 import DynamicGroupSelector from './DynamicGroupSelector';
 
@@ -44,8 +44,6 @@ const PublicAccess = () => {
         breakfast_deadline: data.breakfast_deadline,
         lunch_start_time: data.lunch_start_time || '11:00',
         lunch_deadline: data.lunch_deadline,
-        dinner_start_time: data.dinner_start_time || '17:00',
-        dinner_deadline: data.dinner_deadline || '20:00',
         updated_at: data.updated_at
       };
       
@@ -115,8 +113,6 @@ const PublicAccess = () => {
         return <Coffee className="h-6 w-6" />;
       case 'lunch':
         return <Utensils className="h-6 w-6" />;
-      case 'dinner':
-        return <Moon className="h-6 w-6" />;
       default:
         return <Utensils className="h-6 w-6" />;
     }
@@ -128,8 +124,6 @@ const PublicAccess = () => {
         return 'Café da Manhã';
       case 'lunch':
         return 'Almoço';
-      case 'dinner':
-        return 'Janta';
       default:
         return 'Refeição';
     }
@@ -141,8 +135,6 @@ const PublicAccess = () => {
         return 'text-orange-600 bg-orange-100';
       case 'lunch':
         return 'text-blue-600 bg-blue-100';
-      case 'dinner':
-        return 'text-purple-600 bg-purple-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
@@ -160,9 +152,6 @@ const PublicAccess = () => {
       case 'lunch':
         return currentTime >= (settings.lunch_start_time || '11:00') && 
                currentTime <= settings.lunch_deadline;
-      case 'dinner':
-        return currentTime >= (settings.dinner_start_time || '17:00') && 
-               currentTime <= (settings.dinner_deadline || '20:00');
       default:
         return false;
     }
@@ -176,8 +165,6 @@ const PublicAccess = () => {
         return `${settings.breakfast_start_time || '06:00'} às ${settings.breakfast_deadline}`;
       case 'lunch':
         return `${settings.lunch_start_time || '11:00'} às ${settings.lunch_deadline}`;
-      case 'dinner':
-        return `${settings.dinner_start_time || '17:00'} às ${settings.dinner_deadline || '20:00'}`;
       default:
         return '';
     }
@@ -271,7 +258,7 @@ const PublicAccess = () => {
     }
   };
 
-  const mealTypes: MealType[] = ['breakfast', 'lunch', 'dinner'];
+  const mealTypes: MealType[] = ['breakfast', 'lunch'];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -304,7 +291,7 @@ const PublicAccess = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
                   {mealTypes.map((mealType) => (
                     <Button
                       key={mealType}
