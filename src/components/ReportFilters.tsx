@@ -1,146 +1,124 @@
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { GroupType } from '@/types/database.types';
 import { Filter, X } from 'lucide-react';
+import { useGroups } from '@/hooks/useGroups';
 
 export interface ReportFilters {
   month?: string;
   group?: string;
   date?: string;
   user?: string;
+  groupId?: string; // Adicionado para filtrar por grupo específico
 }
 
-interface ReportFiltersProps {
+interface ReportFiltersComponentProps {
   filters: ReportFilters;
   onFiltersChange: (filters: ReportFilters) => void;
   onClearFilters: () => void;
-  users: Array<{ name: string }>;
-  className?: string;
+  users: Array<{ name: string; group_type: GroupType }>;
 }
 
-const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
-  filters,
-  onFiltersChange,
-  onClearFilters,
-  users,
-  className = ""
-}) => {
-  const months = [
-    { value: '01', label: 'Janeiro' },
-    { value: '02', label: 'Fevereiro' },
-    { value: '03', label: 'Março' },
-    { value: '04', label: 'Abril' },
-    { value: '05', label: 'Maio' },
-    { value: '06', label: 'Junho' },
-    { value: '07', label: 'Julho' },
-    { value: '08', label: 'Agosto' },
-    { value: '09', label: 'Setembro' },
-    { value: '10', label: 'Outubro' },
-    { value: '11', label: 'Novembro' },
-    { value: '12', label: 'Dezembro' },
-  ];
+const ReportFiltersComponent = ({ 
+  filters, 
+  onFiltersChange, 
+  onClearFilters, 
+  users 
+}: ReportFiltersComponentProps) => {
+  const { groups } = useGroups();
 
-  const currentYear = new Date().getFullYear();
-
-  const handleFilterChange = (key: keyof ReportFilters, value: string) => {
+  const updateFilter = (key: keyof ReportFilters, value: string) => {
     onFiltersChange({
       ...filters,
-      [key]: value === 'all' ? undefined : value || undefined,
+      [key]: value || undefined,
     });
   };
 
-  const hasActiveFilters = Object.values(filters).some(value => value !== undefined && value !== '');
+  const hasFilters = Object.values(filters).some(value => value !== undefined && value !== '');
 
   return (
-    <Card className={className}>
+    <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filtros Avançados
-          </div>
-          {hasActiveFilters && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onClearFilters}
-              className="text-red-600 hover:text-red-700"
-            >
-              <X className="h-4 w-4 mr-1" />
-              Limpar
-            </Button>
-          )}
+        <CardTitle className="flex items-center gap-2">
+          <Filter className="h-5 w-5" />
+          Filtros de Relatório
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Filtro por Mês */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="month-filter">Mês</Label>
-            <Select
-              value={filters.month || 'all'}
-              onValueChange={(value) => handleFilterChange('month', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os meses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os meses</SelectItem>
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={`${currentYear}-${month.value}`}>
-                    {month.label} {currentYear}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              id="month-filter"
+              type="month"
+              value={filters.month || ''}
+              onChange={(e) => updateFilter('month', e.target.value)}
+            />
           </div>
 
-          {/* Filtro por Grupo */}
-          <div className="space-y-2">
-            <Label htmlFor="group-filter">Grupo</Label>
-            <Select
-              value={filters.group || 'all'}
-              onValueChange={(value) => handleFilterChange('group', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os grupos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os grupos</SelectItem>
-                <SelectItem value="operacao">Operação</SelectItem>
-                <SelectItem value="projetos">Projetos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Filtro por Data Específica */}
           <div className="space-y-2">
             <Label htmlFor="date-filter">Data Específica</Label>
             <Input
               id="date-filter"
               type="date"
               value={filters.date || ''}
-              onChange={(e) => handleFilterChange('date', e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
+              onChange={(e) => updateFilter('date', e.target.value)}
             />
           </div>
 
-          {/* Filtro por Usuário */}
           <div className="space-y-2">
-            <Label htmlFor="user-filter">Usuário</Label>
-            <Select
-              value={filters.user || 'all'}
-              onValueChange={(value) => handleFilterChange('user', value)}
+            <Label>Grupo Específico</Label>
+            <Select 
+              value={filters.groupId || ''} 
+              onValueChange={(value) => updateFilter('groupId', value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Todos os usuários" />
+                <SelectValue placeholder="Selecione um grupo..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos os usuários</SelectItem>
+                <SelectItem value="">Todos os grupos</SelectItem>
+                {groups.map((group) => (
+                  <SelectItem key={group.id} value={group.id}>
+                    {group.display_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Tipo de Grupo (Legacy)</Label>
+            <Select 
+              value={filters.group || ''} 
+              onValueChange={(value) => updateFilter('group', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos os tipos</SelectItem>
+                <SelectItem value="operacao">Operação</SelectItem>
+                <SelectItem value="projetos">Projetos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Usuário</Label>
+            <Select 
+              value={filters.user || ''} 
+              onValueChange={(value) => updateFilter('user', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um usuário..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos os usuários</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.name} value={user.name}>
                     {user.name}
@@ -148,6 +126,18 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex items-end">
+            <Button 
+              variant="outline" 
+              onClick={onClearFilters}
+              disabled={!hasFilters}
+              className="w-full"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Limpar Filtros
+            </Button>
           </div>
         </div>
       </CardContent>
