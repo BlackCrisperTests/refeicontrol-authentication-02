@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Users, LogOut, Plus, BarChart3, Calendar, Coffee, Utensils, Building2, FileText, Loader2, Settings, UserCog, Shield, Activity, TrendingUp } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { User, MealRecord, GroupType } from '@/types/database.types';
+import { User, MealRecord } from '@/types/database.types';
 import SystemSettings from './SystemSettings';
 import EditUserDialog from './EditUserDialog';
 import PasswordConfirmDialog from './PasswordConfirmDialog';
@@ -17,15 +17,18 @@ import MealRecordsTable from './MealRecordsTable';
 import AdminUsersManagement from './AdminUsersManagement';
 import UsersList from './UsersList';
 import ReportsSection from './ReportsSection';
+import GroupsManagement from './GroupsManagement';
+import { useGroups } from '@/hooks/useGroups';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [newUserName, setNewUserName] = useState('');
-  const [newUserGroup, setNewUserGroup] = useState<GroupType | ''>('');
+  const [newUserGroupId, setNewUserGroupId] = useState<string>('');
   const [users, setUsers] = useState<User[]>([]);
   const [mealRecords, setMealRecords] = useState<MealRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
+  const { groups } = useGroups();
 
   // Edit user states
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -77,10 +80,11 @@ const AdminDashboard = () => {
   // Fetch users from Supabase
   const fetchUsers = async () => {
     setLoading(true);
-    const {
-      data,
-      error
-    } = await supabase.from('users').select('*').order('name');
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('name');
+
     if (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -97,12 +101,11 @@ const AdminDashboard = () => {
   // Fetch meal records from Supabase
   const fetchMealRecords = async () => {
     setLoading(true);
-    const {
-      data,
-      error
-    } = await supabase.from('meal_records').select('*').order('created_at', {
-      ascending: false
-    });
+    const { data, error } = await supabase
+      .from('meal_records')
+      .select('*')
+      .order('created_at', { ascending: false });
+
     if (error) {
       console.error('Error fetching meal records:', error);
       toast({
@@ -120,34 +123,40 @@ const AdminDashboard = () => {
   const fetchTodayStats = async () => {
     setStatsLoading(true);
     const today = new Date().toISOString().split('T')[0];
+    
     try {
       // Breakfast count
-      const {
-        data: breakfastData,
-        error: breakfastError
-      } = await supabase.from('meal_records').select('id').eq('meal_date', today).eq('meal_type', 'breakfast');
+      const { data: breakfastData, error: breakfastError } = await supabase
+        .from('meal_records')
+        .select('id')
+        .eq('meal_date', today)
+        .eq('meal_type', 'breakfast');
       if (breakfastError) throw breakfastError;
 
       // Lunch count
-      const {
-        data: lunchData,
-        error: lunchError
-      } = await supabase.from('meal_records').select('id').eq('meal_date', today).eq('meal_type', 'lunch');
+      const { data: lunchData, error: lunchError } = await supabase
+        .from('meal_records')
+        .select('id')
+        .eq('meal_date', today)
+        .eq('meal_type', 'lunch');
       if (lunchError) throw lunchError;
 
       // Operacao count
-      const {
-        data: operacaoData,
-        error: operacaoError
-      } = await supabase.from('meal_records').select('id').eq('meal_date', today).eq('group_type', 'operacao');
+      const { data: operacaoData, error: operacaoError } = await supabase
+        .from('meal_records')
+        .select('id')
+        .eq('meal_date', today)
+        .eq('group_type', 'operacao');
       if (operacaoError) throw operacaoError;
 
       // Projetos count
-      const {
-        data: projetosData,
-        error: projetosError
-      } = await supabase.from('meal_records').select('id').eq('meal_date', today).eq('group_type', 'projetos');
+      const { data: projetosData, error: projetosError } = await supabase
+        .from('meal_records')
+        .select('id')
+        .eq('meal_date', today)
+        .eq('group_type', 'projetos');
       if (projetosError) throw projetosError;
+
       setBreakfastToday(breakfastData.length);
       setLunchToday(lunchData.length);
       setOperacaoToday(operacaoData.length);
@@ -170,6 +179,7 @@ const AdminDashboard = () => {
     fetchMealRecords();
     fetchTodayStats();
   }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('admin_session');
     toast({
@@ -178,8 +188,9 @@ const AdminDashboard = () => {
     });
     navigate('/admin');
   };
+
   const handleAddUser = async () => {
-    if (!newUserName || !newUserGroup) {
+    if (!newUserName || !newUserGroupId) {
       toast({
         title: "Erro",
         description: "Preencha todos os campos.",
@@ -187,16 +198,24 @@ const AdminDashboard = () => {
       });
       return;
     }
+
     setLoading(true);
+    
     try {
+      const selectedGroup = groups.find(g => g.id === newUserGroupId);
+      
       // Check if user already exists
-      const {
-        data: existingUser
-      } = await supabase.from('users').select('id').eq('name', newUserName).eq('group_type', newUserGroup).maybeSingle();
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('name', newUserName)
+        .eq('group_id', newUserGroupId)
+        .maybeSingle();
+
       if (existingUser) {
         toast({
           title: "Usuário já existe",
-          description: `${newUserName} já está cadastrado no grupo ${newUserGroup === 'operacao' ? 'Operação' : 'Projetos'}.`,
+          description: `${newUserName} já está cadastrado neste grupo.`,
           variant: "destructive"
         });
         setLoading(false);
@@ -204,13 +223,16 @@ const AdminDashboard = () => {
       }
 
       // Add new user
-      const {
-        error
-      } = await supabase.from('users').insert({
-        name: newUserName,
-        group_type: newUserGroup
-      });
+      const { error } = await supabase
+        .from('users')
+        .insert({
+          name: newUserName,
+          group_id: newUserGroupId,
+          group_type: selectedGroup?.name as any
+        });
+
       if (error) throw error;
+
       toast({
         title: "Usuário adicionado",
         description: `${newUserName} foi adicionado com sucesso.`
@@ -218,7 +240,7 @@ const AdminDashboard = () => {
 
       // Reset form and refresh users
       setNewUserName('');
-      setNewUserGroup('');
+      setNewUserGroupId('');
       fetchUsers();
     } catch (error: any) {
       console.error('Error adding user:', error);
@@ -231,19 +253,25 @@ const AdminDashboard = () => {
       setLoading(false);
     }
   };
+
   const confirmDeleteUser = (user: User) => {
     setUserToDelete(user);
     setShowPasswordDialog(true);
   };
+
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
+
     setLoading(true);
     try {
       // Delete user
-      const {
-        error
-      } = await supabase.from('users').delete().eq('id', userToDelete.id);
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userToDelete.id);
+
       if (error) throw error;
+
       toast({
         title: "Usuário removido",
         description: "Usuário removido com sucesso."
@@ -263,11 +291,14 @@ const AdminDashboard = () => {
       setUserToDelete(null);
     }
   };
+
   const openEditDialog = (user: User) => {
     setEditingUser(user);
     setShowEditDialog(true);
   };
-  return <div className="min-h-screen bg-slate-50">
+
+  return (
+    <div className="min-h-screen bg-slate-50">
       {/* Professional Header */}
       <div className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -314,10 +345,14 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-orange-700 mb-1">Café da Manhã Hoje</p>
-                  {statsLoading ? <Loader2 className="h-6 w-6 text-orange-600 animate-spin" /> : <div className="flex items-baseline gap-2">
+                  {statsLoading ? (
+                    <Loader2 className="h-6 w-6 text-orange-600 animate-spin" />
+                  ) : (
+                    <div className="flex items-baseline gap-2">
                       <p className="text-3xl font-bold text-orange-800">{breakfastToday}</p>
                       <span className="text-sm text-orange-600">registros</span>
-                    </div>}
+                    </div>
+                  )}
                 </div>
                 <div className="p-3 bg-orange-500 rounded-xl">
                   <Coffee className="h-8 w-8 text-white" />
@@ -331,10 +366,14 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium mb-1 text-green-700">Almoço Hoje</p>
-                  {statsLoading ? <Loader2 className="h-6 w-6 text-blue-600 animate-spin" /> : <div className="flex items-baseline gap-2">
+                  {statsLoading ? (
+                    <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+                  ) : (
+                    <div className="flex items-baseline gap-2">
                       <p className="text-3xl font-bold text-green-600">{lunchToday}</p>
                       <span className="text-sm text-green-600">registros</span>
-                    </div>}
+                    </div>
+                  )}
                 </div>
                 <div className="p-3 rounded-xl bg-green-500">
                   <Utensils className="h-8 w-8 text-white" />
@@ -348,10 +387,14 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium mb-1 text-red-800">Equipe Operação</p>
-                  {statsLoading ? <Loader2 className="h-6 w-6 text-emerald-600 animate-spin" /> : <div className="flex items-baseline gap-2">
+                  {statsLoading ? (
+                    <Loader2 className="h-6 w-6 text-emerald-600 animate-spin" />
+                  ) : (
+                    <div className="flex items-baseline gap-2">
                       <p className="text-3xl font-bold text-red-800">{operacaoToday}</p>
                       <span className="text-sm text-red-800">hoje</span>
-                    </div>}
+                    </div>
+                  )}
                 </div>
                 <div className="p-3 rounded-xl bg-red-500">
                   <Building2 className="h-8 w-8 text-white" />
@@ -365,10 +408,14 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium mb-1 text-blue-800">Equipe Projetos</p>
-                  {statsLoading ? <Loader2 className="h-6 w-6 text-purple-600 animate-spin" /> : <div className="flex items-baseline gap-2">
+                  {statsLoading ? (
+                    <Loader2 className="h-6 w-6 text-purple-600 animate-spin" />
+                  ) : (
+                    <div className="flex items-baseline gap-2">
                       <p className="text-3xl font-bold text-blue-700">{projetosToday}</p>
                       <span className="text-sm text-blue-700">hoje</span>
-                    </div>}
+                    </div>
+                  )}
                 </div>
                 <div className="p-3 rounded-xl bg-blue-800">
                   <Users className="h-8 w-8 text-white" />
@@ -381,7 +428,7 @@ const AdminDashboard = () => {
         {/* Professional Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2">
-            <TabsList className="grid w-full grid-cols-5 bg-transparent gap-1">
+            <TabsList className="grid w-full grid-cols-6 bg-transparent gap-1">
               <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Usuários</span>
@@ -389,6 +436,10 @@ const AdminDashboard = () => {
               <TabsTrigger value="records" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <Calendar className="h-4 w-4" />
                 <span className="hidden sm:inline">Registros</span>
+              </TabsTrigger>
+              <TabsTrigger value="groups" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
+                <Shield className="h-4 w-4" />
+                <span className="hidden sm:inline">Grupos</span>
               </TabsTrigger>
               <TabsTrigger value="settings" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <Settings className="h-4 w-4" />
@@ -419,39 +470,76 @@ const AdminDashboard = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="newUserName">Nome Completo</Label>
-                    <Input id="newUserName" value={newUserName} onChange={e => setNewUserName(e.target.value)} placeholder="Digite o nome..." disabled={loading} />
+                    <Input
+                      id="newUserName"
+                      value={newUserName}
+                      onChange={(e) => setNewUserName(e.target.value)}
+                      placeholder="Digite o nome..."
+                      disabled={loading}
+                    />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="newUserGroup">Grupo</Label>
-                    <Select value={newUserGroup} onValueChange={value => setNewUserGroup(value as GroupType)} disabled={loading}>
+                    <Select 
+                      value={newUserGroupId} 
+                      onValueChange={setNewUserGroupId}
+                      disabled={loading}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o grupo..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="operacao">Operação</SelectItem>
-                        <SelectItem value="projetos">Projetos</SelectItem>
+                        {groups.map((group) => (
+                          <SelectItem key={group.id} value={group.id}>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: group.color }}
+                              />
+                              {group.display_name}
+                            </div>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <Button onClick={handleAddUser} className="w-full" disabled={loading}>
-                    {loading ? <>
+                    {loading ? (
+                      <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Adicionando...
-                      </> : 'Adicionar Usuário'}
+                      </>
+                    ) : (
+                      'Adicionar Usuário'
+                    )}
                   </Button>
                 </CardContent>
               </Card>
 
               {/* Users List */}
-              <UsersList users={users} loading={loading} onEditUser={openEditDialog} onDeleteUser={confirmDeleteUser} />
+              <UsersList 
+                users={users} 
+                loading={loading} 
+                onEditUser={openEditDialog} 
+                onDeleteUser={confirmDeleteUser} 
+              />
             </div>
           </TabsContent>
 
           {/* Records Tab */}
           <TabsContent value="records">
-            <MealRecordsTable records={mealRecords} loading={loading} onRecordsUpdated={fetchMealRecords} />
+            <MealRecordsTable 
+              records={mealRecords} 
+              loading={loading} 
+              onRecordsUpdated={fetchMealRecords} 
+            />
+          </TabsContent>
+
+          {/* Groups Tab */}
+          <TabsContent value="groups">
+            <GroupsManagement />
           </TabsContent>
 
           {/* Settings Tab */}
@@ -471,18 +559,30 @@ const AdminDashboard = () => {
         </Tabs>
 
         {/* Edit User Dialog */}
-        <EditUserDialog user={editingUser} isOpen={showEditDialog} onClose={() => {
-        setShowEditDialog(false);
-        setEditingUser(null);
-      }} onUserUpdated={fetchUsers} />
+        <EditUserDialog 
+          user={editingUser} 
+          isOpen={showEditDialog} 
+          onClose={() => {
+            setShowEditDialog(false);
+            setEditingUser(null);
+          }} 
+          onUserUpdated={fetchUsers} 
+        />
 
         {/* Password Confirmation Dialog */}
-        <PasswordConfirmDialog isOpen={showPasswordDialog} onClose={() => {
-        setShowPasswordDialog(false);
-        setUserToDelete(null);
-      }} onConfirm={handleDeleteUser} title="Confirmar Exclusão" message={`Tem certeza que deseja excluir o usuário ${userToDelete?.name}?`} />
+        <PasswordConfirmDialog 
+          isOpen={showPasswordDialog} 
+          onClose={() => {
+            setShowPasswordDialog(false);
+            setUserToDelete(null);
+          }} 
+          onConfirm={handleDeleteUser} 
+          title="Confirmar Exclusão" 
+          message={`Tem certeza que deseja excluir o usuário ${userToDelete?.name}?`} 
+        />
       </div>
-    </div>;
+    </div>
+  );
 };
 
 export default AdminDashboard;
