@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -9,12 +10,15 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MealRecord } from '@/types/database.types';
 import { Trash2, Loader2, Search, Filter, Calendar, Users, Coffee, Utensils } from 'lucide-react';
+import { useGroups } from '@/hooks/useGroups';
 import PasswordConfirmDialog from './PasswordConfirmDialog';
+
 interface MealRecordsTableProps {
   records: MealRecord[];
   loading: boolean;
   onRecordsUpdated: () => void;
 }
+
 const MealRecordsTable = ({
   records,
   loading,
@@ -23,6 +27,7 @@ const MealRecordsTable = ({
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<MealRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const { groups } = useGroups();
 
   // Filtros
   const [searchName, setSearchName] = useState('');
@@ -55,14 +60,18 @@ const MealRecordsTable = ({
       };
     });
   }, [records]);
+
   const handleDeleteRecord = async () => {
     if (!recordToDelete) return;
     setDeleting(true);
     try {
-      const {
-        error
-      } = await supabase.from('meal_records').delete().eq('id', recordToDelete.id);
+      const { error } = await supabase
+        .from('meal_records')
+        .delete()
+        .eq('id', recordToDelete.id);
+
       if (error) throw error;
+
       toast({
         title: "Registro removido",
         description: "O registro de refeição foi removido com sucesso."
@@ -80,6 +89,7 @@ const MealRecordsTable = ({
       setRecordToDelete(null);
     }
   };
+
   const confirmDelete = (record: MealRecord) => {
     setRecordToDelete(record);
     setShowPasswordDialog(true);
@@ -113,15 +123,20 @@ const MealRecordsTable = ({
   const stats = useMemo(() => {
     const breakfastCount = filteredRecords.filter(r => r.meal_type === 'breakfast').length;
     const lunchCount = filteredRecords.filter(r => r.meal_type === 'lunch').length;
-    const operacaoCount = filteredRecords.filter(r => r.group_type === 'operacao').length;
-    const projetosCount = filteredRecords.filter(r => r.group_type === 'projetos').length;
+    
+    // Contar por grupos dinâmicos
+    const groupStats = groups.reduce((acc, group) => {
+      acc[group.name] = filteredRecords.filter(r => r.group_type === group.name).length;
+      return acc;
+    }, {} as Record<string, number>);
+
     return {
       breakfastCount,
       lunchCount,
-      operacaoCount,
-      projetosCount
+      ...groupStats
     };
-  }, [filteredRecords]);
+  }, [filteredRecords, groups]);
+
   const clearFilters = () => {
     setSearchName('');
     setFilterGroup('all');
@@ -130,12 +145,27 @@ const MealRecordsTable = ({
     setFilterMonth('all');
     setCurrentPage(1);
   };
+
+  const getGroupDisplayName = (groupType: string) => {
+    const group = groups.find(g => g.name === groupType);
+    return group ? group.display_name : groupType;
+  };
+
+  const getGroupColor = (groupType: string) => {
+    const group = groups.find(g => g.name === groupType);
+    return group ? group.color : '#6B7280';
+  };
+
   if (loading) {
-    return <div className="flex justify-center py-8">
+    return (
+      <div className="flex justify-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-      </div>;
+      </div>
+    );
   }
-  return <div className="space-y-6">
+
+  return (
+    <div className="space-y-6">
       {/* Estatísticas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
@@ -162,29 +192,21 @@ const MealRecordsTable = ({
           </CardContent>
         </Card>
         
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Operação</p>
-                <p className="text-2xl font-bold text-red-600">{stats.operacaoCount}</p>
+        {groups.slice(0, 2).map((group, index) => (
+          <Card key={group.id}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">{group.display_name}</p>
+                  <p className="text-2xl font-bold" style={{ color: group.color }}>
+                    {stats[group.name] || 0}
+                  </p>
+                </div>
+                <Users className="h-6 w-6" style={{ color: group.color }} />
               </div>
-              <Users className="h-6 w-6 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Projetos</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.projetosCount}</p>
-              </div>
-              <Users className="h-6 w-6 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Filtros */}
@@ -199,7 +221,12 @@ const MealRecordsTable = ({
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input placeholder="Buscar por nome..." value={searchName} onChange={e => setSearchName(e.target.value)} className="pl-10" />
+              <Input 
+                placeholder="Buscar por nome..." 
+                value={searchName} 
+                onChange={e => setSearchName(e.target.value)} 
+                className="pl-10" 
+              />
             </div>
             
             <Select value={filterGroup} onValueChange={setFilterGroup}>
@@ -208,8 +235,17 @@ const MealRecordsTable = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os grupos</SelectItem>
-                <SelectItem value="operacao">Operação</SelectItem>
-                <SelectItem value="projetos">Projetos</SelectItem>
+                {groups.map((group) => (
+                  <SelectItem key={group.id} value={group.name}>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: group.color }}
+                      />
+                      {group.display_name}
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             
@@ -230,13 +266,20 @@ const MealRecordsTable = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os meses</SelectItem>
-                {availableMonths.map(month => <SelectItem key={month.value} value={month.value}>
+                {availableMonths.map(month => (
+                  <SelectItem key={month.value} value={month.value}>
                     {month.label}
-                  </SelectItem>)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             
-            <Input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} placeholder="Filtrar por data" />
+            <Input 
+              type="date" 
+              value={filterDate} 
+              onChange={e => setFilterDate(e.target.value)} 
+              placeholder="Filtrar por data" 
+            />
             
             <Button variant="outline" onClick={clearFilters}>
               Limpar Filtros
@@ -273,15 +316,23 @@ const MealRecordsTable = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedRecords.map(record => <TableRow key={record.id} className="hover:bg-gray-50">
+                  {paginatedRecords.map(record => (
+                    <TableRow key={record.id} className="hover:bg-gray-50">
                       <TableCell className="font-medium">{record.user_name}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${record.group_type === 'operacao' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
-                          {record.group_type === 'operacao' ? 'Operação' : 'Projetos'}
+                        <span 
+                          className="px-2 py-1 rounded-full text-xs font-medium text-white"
+                          style={{ backgroundColor: getGroupColor(record.group_type) }}
+                        >
+                          {getGroupDisplayName(record.group_type)}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${record.meal_type === 'breakfast' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'}`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          record.meal_type === 'breakfast' 
+                            ? 'bg-orange-100 text-orange-800' 
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
                           {record.meal_type === 'breakfast' ? 'Café' : 'Almoço'}
                         </span>
                       </TableCell>
@@ -290,31 +341,53 @@ const MealRecordsTable = ({
                       </TableCell>
                       <TableCell className="font-mono text-sm">{record.meal_time}</TableCell>
                       <TableCell>
-                        <Button size="sm" variant="destructive" onClick={() => confirmDelete(record)} disabled={deleting}>
+                        <Button 
+                          size="sm" 
+                          variant="destructive" 
+                          onClick={() => confirmDelete(record)} 
+                          disabled={deleting}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
-                    </TableRow>)}
+                    </TableRow>
+                  ))}
                   
-                  {paginatedRecords.length === 0 && <TableRow>
+                  {paginatedRecords.length === 0 && (
+                    <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                        {filteredRecords.length === 0 ? "Nenhum registro encontrado com os filtros aplicados." : "Nenhum registro encontrado."}
+                        {filteredRecords.length === 0 
+                          ? "Nenhum registro encontrado com os filtros aplicados." 
+                          : "Nenhum registro encontrado."
+                        }
                       </TableCell>
-                    </TableRow>}
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
 
               {/* Paginação */}
-              {totalPages > 1 && <div className="flex items-center justify-between mt-4">
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
                   <p className="text-sm text-gray-600">
                     Mostrando {startIndex + 1} a {Math.min(startIndex + recordsPerPage, filteredRecords.length)} de {filteredRecords.length} registros
                   </p>
                   
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCurrentPage(1)} 
+                      disabled={currentPage === 1}
+                    >
                       Primeira
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCurrentPage(currentPage - 1)} 
+                      disabled={currentPage === 1}
+                    >
                       Anterior
                     </Button>
                     
@@ -322,23 +395,42 @@ const MealRecordsTable = ({
                       Página {currentPage} de {totalPages}
                     </span>
                     
-                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCurrentPage(currentPage + 1)} 
+                      disabled={currentPage === totalPages}
+                    >
                       Próxima
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCurrentPage(totalPages)} 
+                      disabled={currentPage === totalPages}
+                    >
                       Última
                     </Button>
                   </div>
-                </div>}
+                </div>
+              )}
             </div>
           </ScrollArea>
         </CardContent>
       </Card>
 
-      <PasswordConfirmDialog isOpen={showPasswordDialog} onClose={() => {
-      setShowPasswordDialog(false);
-      setRecordToDelete(null);
-    }} onConfirm={handleDeleteRecord} title="Confirmar Exclusão" message={`Tem certeza que deseja excluir o registro de ${recordToDelete?.meal_type === 'breakfast' ? 'café' : 'almoço'} de ${recordToDelete?.user_name}?`} />
-    </div>;
+      <PasswordConfirmDialog 
+        isOpen={showPasswordDialog} 
+        onClose={() => {
+          setShowPasswordDialog(false);
+          setRecordToDelete(null);
+        }} 
+        onConfirm={handleDeleteRecord} 
+        title="Confirmar Exclusão" 
+        message={`Tem certeza que deseja excluir o registro de ${recordToDelete?.meal_type === 'breakfast' ? 'café' : 'almoço'} de ${recordToDelete?.user_name}?`} 
+      />
+    </div>
+  );
 };
+
 export default MealRecordsTable;
