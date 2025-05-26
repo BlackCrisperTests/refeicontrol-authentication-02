@@ -28,30 +28,30 @@ export const generatePDF = (reportData: ReportData): void => {
     console.log('Logo Mizu não pôde ser carregada no PDF');
   }
   
-  // Logo RefeiControl (centro) - tamanho aumentado
+  // RefeiControl logo (centro) - nova logo com tamanho aumentado
   try {
     const refeiLogo = new Image();
-    refeiLogo.src = '/lovable-uploads/da23f7ca-e2dc-473a-8266-22c9c492e5d0.png';
-    doc.addImage(refeiLogo, 'PNG', 85, 12, 25, 25);
+    refeiLogo.src = '/lovable-uploads/56a93187-288c-427c-8201-6fe4029f0a83.png';
+    doc.addImage(refeiLogo, 'PNG', 80, 10, 35, 30);
   } catch (error) {
     console.log('Logo RefeiControl não pôde ser carregada no PDF');
   }
   
   doc.setFontSize(16);
-  doc.text(reportData.title, 20, 45);
+  doc.text(reportData.title, 20, 50);
   
   doc.setFontSize(12);
   doc.setTextColor(100, 100, 100);
-  doc.text(reportData.subtitle, 20, 55);
+  doc.text(reportData.subtitle, 20, 60);
   
   // Informações do relatório
   doc.setFontSize(10);
-  doc.text(`Gerado por: ${reportData.adminName}`, 20, 70);
-  doc.text(`Data/Hora: ${reportData.generatedAt}`, 20, 77);
+  doc.text(`Gerado por: ${reportData.adminName}`, 20, 75);
+  doc.text(`Data/Hora: ${reportData.generatedAt}`, 20, 82);
   
   // Linha separadora
   doc.setDrawColor(200, 200, 200);
-  doc.line(20, 85, 190, 85);
+  doc.line(20, 90, 190, 90);
   
   // Tabela com dados
   autoTable(doc, {
@@ -59,7 +59,7 @@ export const generatePDF = (reportData: ReportData): void => {
     body: reportData.data.map(row => 
       reportData.columns.map(col => row[col.dataKey] || '-')
     ),
-    startY: 95,
+    startY: 100,
     styles: {
       fontSize: 9,
       cellPadding: 3,

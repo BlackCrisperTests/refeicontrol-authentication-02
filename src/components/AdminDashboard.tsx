@@ -282,12 +282,12 @@ const AdminDashboard = () => {
                 />
               </div>
               
-              {/* RefeiControl logo apenas - tamanho aumentado */}
+              {/* RefeiControl logo com tamanho aumentado */}
               <div className="flex items-center">
                 <img 
-                  src="/lovable-uploads/da23f7ca-e2dc-473a-8266-22c9c492e5d0.png" 
+                  src="/lovable-uploads/56a93187-288c-427c-8201-6fe4029f0a83.png" 
                   alt="RefeiControl - Painel Administrativo" 
-                  className="h-16 w-auto"
+                  className="h-20 w-auto"
                 />
               </div>
             </div>
