@@ -46,7 +46,8 @@ const PublicAccess = () => {
       };
 
       data.forEach((user: { name: string, group_type: GroupType }) => {
-        if (groupedUsers[user.group_type]) {
+        // Filter out empty or null names to prevent Select.Item errors
+        if (user.name && user.name.trim() && groupedUsers[user.group_type]) {
           groupedUsers[user.group_type].push(user.name);
         }
       });
@@ -86,10 +87,10 @@ const PublicAccess = () => {
   
   const filteredUsers = selectedGroup 
     ? users[selectedGroup].filter(name => 
-        name.toLowerCase().includes(searchTerm.toLowerCase())
+        name && name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : allUsers.filter(name => 
-        name.toLowerCase().includes(searchTerm.toLowerCase())
+        name && name.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
   const canRegisterBreakfast = systemSettings 
