@@ -85,7 +85,7 @@ const MatriculaVerification: React.FC<MatriculaVerificationProps> = ({
               <p className="text-lg text-gray-600">Tente novamente</p>
             </div>
           )}
-        </div>
+        </CardContent>
       </Card>
     );
   }
