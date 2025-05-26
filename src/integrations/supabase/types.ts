@@ -39,9 +39,40 @@ export type Database = {
         }
         Relationships: []
       }
+      groups: {
+        Row: {
+          active: boolean
+          color: string
+          created_at: string
+          display_name: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          display_name: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       meal_records: {
         Row: {
           created_at: string
+          group_id: string | null
           group_type: Database["public"]["Enums"]["group_type"]
           id: string
           meal_date: string
@@ -52,6 +83,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          group_id?: string | null
           group_type: Database["public"]["Enums"]["group_type"]
           id?: string
           meal_date?: string
@@ -62,6 +94,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          group_id?: string | null
           group_type?: Database["public"]["Enums"]["group_type"]
           id?: string
           meal_date?: string
@@ -71,6 +104,13 @@ export type Database = {
           user_name?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "meal_records_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "meal_records_user_id_fkey"
             columns: ["user_id"]
@@ -111,6 +151,7 @@ export type Database = {
         Row: {
           active: boolean
           created_at: string
+          group_id: string | null
           group_type: Database["public"]["Enums"]["group_type"]
           id: string
           name: string
@@ -119,6 +160,7 @@ export type Database = {
         Insert: {
           active?: boolean
           created_at?: string
+          group_id?: string | null
           group_type: Database["public"]["Enums"]["group_type"]
           id?: string
           name: string
@@ -127,12 +169,21 @@ export type Database = {
         Update: {
           active?: boolean
           created_at?: string
+          group_id?: string | null
           group_type?: Database["public"]["Enums"]["group_type"]
           id?: string
           name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
