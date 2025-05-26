@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Clock, Coffee, Utensils, Users, Building2, Search, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -87,10 +86,10 @@ const PublicAccess = () => {
   
   const filteredUsers = selectedGroup 
     ? users[selectedGroup].filter(name => 
-        name && name.toLowerCase().includes(searchTerm.toLowerCase())
+        name && name.trim() && name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : allUsers.filter(name => 
-        name && name.toLowerCase().includes(searchTerm.toLowerCase())
+        name && name.trim() && name.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
   const canRegisterBreakfast = systemSettings 
@@ -288,11 +287,13 @@ const PublicAccess = () => {
                     <SelectValue placeholder="Selecione seu nome..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {filteredUsers.map((name) => (
-                      <SelectItem key={name} value={name}>
-                        {name}
-                      </SelectItem>
-                    ))}
+                    {filteredUsers
+                      .filter(name => name && name.trim()) // Additional safety check
+                      .map((name) => (
+                        <SelectItem key={name} value={name}>
+                          {name}
+                        </SelectItem>
+                      ))}
                     <SelectItem value="outros">Outros (digitar nome)</SelectItem>
                   </SelectContent>
                 </Select>
