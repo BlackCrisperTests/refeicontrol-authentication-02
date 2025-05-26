@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Filter, X } from 'lucide-react';
+import { Filter, X, CalendarRange } from 'lucide-react';
 import { useGroups } from '@/hooks/useGroups';
 
 export interface ReportFilters {
@@ -13,6 +13,8 @@ export interface ReportFilters {
   group?: string;
   date?: string;
   user?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface ReportFiltersProps {
@@ -80,86 +82,120 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Filtro por Mês */}
-          <div className="space-y-2">
-            <Label htmlFor="month-filter">Mês</Label>
-            <Select
-              value={filters.month || 'all'}
-              onValueChange={(value) => handleFilterChange('month', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os meses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os meses</SelectItem>
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={`${currentYear}-${month.value}`}>
-                    {month.label} {currentYear}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="space-y-6">
+          {/* Seção de Período Personalizado */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <CalendarRange className="h-4 w-4 text-blue-600" />
+              <Label className="text-sm font-medium text-blue-600">Período Personalizado</Label>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="space-y-2">
+                <Label htmlFor="start-date-filter">Data Inicial</Label>
+                <Input
+                  id="start-date-filter"
+                  type="date"
+                  value={filters.startDate || ''}
+                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                  max={filters.endDate || new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="end-date-filter">Data Final</Label>
+                <Input
+                  id="end-date-filter"
+                  type="date"
+                  value={filters.endDate || ''}
+                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                  min={filters.startDate}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Filtro por Grupo */}
-          <div className="space-y-2">
-            <Label htmlFor="group-filter">Grupo</Label>
-            <Select
-              value={filters.group || 'all'}
-              onValueChange={(value) => handleFilterChange('group', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os grupos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os grupos</SelectItem>
-                {groups.map((group) => (
-                  <SelectItem key={group.id} value={group.name}>
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: group.color }}
-                      />
-                      {group.display_name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Outros Filtros */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Filtro por Mês */}
+            <div className="space-y-2">
+              <Label htmlFor="month-filter">Mês</Label>
+              <Select
+                value={filters.month || 'all'}
+                onValueChange={(value) => handleFilterChange('month', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os meses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os meses</SelectItem>
+                  {months.map((month) => (
+                    <SelectItem key={month.value} value={`${currentYear}-${month.value}`}>
+                      {month.label} {currentYear}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Filtro por Data Específica */}
-          <div className="space-y-2">
-            <Label htmlFor="date-filter">Data Específica</Label>
-            <Input
-              id="date-filter"
-              type="date"
-              value={filters.date || ''}
-              onChange={(e) => handleFilterChange('date', e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-            />
-          </div>
+            {/* Filtro por Grupo */}
+            <div className="space-y-2">
+              <Label htmlFor="group-filter">Grupo</Label>
+              <Select
+                value={filters.group || 'all'}
+                onValueChange={(value) => handleFilterChange('group', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os grupos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os grupos</SelectItem>
+                  {groups.map((group) => (
+                    <SelectItem key={group.id} value={group.name}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: group.color }}
+                        />
+                        {group.display_name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Filtro por Usuário */}
-          <div className="space-y-2">
-            <Label htmlFor="user-filter">Usuário</Label>
-            <Select
-              value={filters.user || 'all'}
-              onValueChange={(value) => handleFilterChange('user', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os usuários" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os usuários</SelectItem>
-                {users.map((user) => (
-                  <SelectItem key={user.name} value={user.name}>
-                    {user.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Filtro por Data Específica */}
+            <div className="space-y-2">
+              <Label htmlFor="date-filter">Data Específica</Label>
+              <Input
+                id="date-filter"
+                type="date"
+                value={filters.date || ''}
+                onChange={(e) => handleFilterChange('date', e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+
+            {/* Filtro por Usuário */}
+            <div className="space-y-2">
+              <Label htmlFor="user-filter">Usuário</Label>
+              <Select
+                value={filters.user || 'all'}
+                onValueChange={(value) => handleFilterChange('user', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os usuários" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os usuários</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.name} value={user.name}>
+                      {user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </CardContent>

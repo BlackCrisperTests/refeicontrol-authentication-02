@@ -38,20 +38,25 @@ const ReportsSection = () => {
   const buildQuery = (baseQuery: any) => {
     let query = baseQuery;
 
-    if (filters.month) {
+    // Priorizar período personalizado sobre outros filtros de data
+    if (filters.startDate && filters.endDate) {
+      query = query.gte('meal_date', filters.startDate).lte('meal_date', filters.endDate);
+    } else if (filters.startDate) {
+      query = query.gte('meal_date', filters.startDate);
+    } else if (filters.endDate) {
+      query = query.lte('meal_date', filters.endDate);
+    } else if (filters.month) {
       const startOfMonth = `${filters.month}-01`;
       const year = filters.month.split('-')[0];
       const month = filters.month.split('-')[1];
       const endOfMonth = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
       query = query.gte('meal_date', startOfMonth).lte('meal_date', endOfMonth);
+    } else if (filters.date) {
+      query = query.eq('meal_date', filters.date);
     }
 
     if (filters.group) {
       query = query.eq('group_type', filters.group as GroupType);
-    }
-
-    if (filters.date) {
-      query = query.eq('meal_date', filters.date);
     }
 
     if (filters.user) {
@@ -64,20 +69,24 @@ const ReportsSection = () => {
   const getFilterDescription = () => {
     const descriptions = [];
     
-    if (filters.month) {
+    if (filters.startDate && filters.endDate) {
+      descriptions.push(`Período: ${new Date(filters.startDate).toLocaleDateString('pt-BR')} a ${new Date(filters.endDate).toLocaleDateString('pt-BR')}`);
+    } else if (filters.startDate) {
+      descriptions.push(`A partir de: ${new Date(filters.startDate).toLocaleDateString('pt-BR')}`);
+    } else if (filters.endDate) {
+      descriptions.push(`Até: ${new Date(filters.endDate).toLocaleDateString('pt-BR')}`);
+    } else if (filters.month) {
       const [year, month] = filters.month.split('-');
       const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
       descriptions.push(`${monthNames[parseInt(month) - 1]} de ${year}`);
+    } else if (filters.date) {
+      descriptions.push(`Data: ${new Date(filters.date).toLocaleDateString('pt-BR')}`);
     }
     
     if (filters.group) {
       const group = groups.find(g => g.name === filters.group);
       descriptions.push(group?.display_name || filters.group);
-    }
-    
-    if (filters.date) {
-      descriptions.push(`Data: ${new Date(filters.date).toLocaleDateString('pt-BR')}`);
     }
     
     if (filters.user) {
@@ -274,7 +283,14 @@ const ReportsSection = () => {
         .from('meal_records')
         .select('user_name, meal_type');
 
-      if (filters.month) {
+      // Aplicar filtros de data no relatório de usuários
+      if (filters.startDate && filters.endDate) {
+        recordsQuery = recordsQuery.gte('meal_date', filters.startDate).lte('meal_date', filters.endDate);
+      } else if (filters.startDate) {
+        recordsQuery = recordsQuery.gte('meal_date', filters.startDate);
+      } else if (filters.endDate) {
+        recordsQuery = recordsQuery.lte('meal_date', filters.endDate);
+      } else if (filters.month) {
         const startOfMonth = `${filters.month}-01`;
         const [year, month] = filters.month.split('-');
         const endOfMonth = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
@@ -352,11 +368,20 @@ const ReportsSection = () => {
         .from('meal_records')
         .select('*');
 
-      if (filters.month) {
+      // Aplicar filtros de data
+      if (filters.startDate && filters.endDate) {
+        query = query.gte('meal_date', filters.startDate).lte('meal_date', filters.endDate);
+      } else if (filters.startDate) {
+        query = query.gte('meal_date', filters.startDate);
+      } else if (filters.endDate) {
+        query = query.lte('meal_date', filters.endDate);
+      } else if (filters.month) {
         const startOfMonth = `${filters.month}-01`;
         const [year, month] = filters.month.split('-');
         const endOfMonth = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
         query = query.gte('meal_date', startOfMonth).lte('meal_date', endOfMonth);
+      } else if (filters.date) {
+        query = query.eq('meal_date', filters.date);
       } else {
         const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
         query = query.gte('meal_date', startOfMonth.toISOString().split('T')[0]);
@@ -368,10 +393,6 @@ const ReportsSection = () => {
 
       if (filters.user) {
         query = query.eq('user_name', filters.user);
-      }
-
-      if (filters.date) {
-        query = query.eq('meal_date', filters.date);
       }
 
       const { data: records, error } = await query.order('meal_date', { ascending: false });
