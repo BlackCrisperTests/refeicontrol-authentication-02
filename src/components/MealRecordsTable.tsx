@@ -24,8 +24,8 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
   
   // Filtros
   const [searchName, setSearchName] = useState('');
-  const [filterGroup, setFilterGroup] = useState<string>('');
-  const [filterMeal, setFilterMeal] = useState<string>('');
+  const [filterGroup, setFilterGroup] = useState<string>('all');
+  const [filterMeal, setFilterMeal] = useState<string>('all');
   const [filterDate, setFilterDate] = useState<string>('');
   
   // Paginação
@@ -73,8 +73,8 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
   const filteredRecords = useMemo(() => {
     return records.filter((record) => {
       const matchesName = record.user_name.toLowerCase().includes(searchName.toLowerCase());
-      const matchesGroup = !filterGroup || record.group_type === filterGroup;
-      const matchesMeal = !filterMeal || record.meal_type === filterMeal;
+      const matchesGroup = filterGroup === 'all' || record.group_type === filterGroup;
+      const matchesMeal = filterMeal === 'all' || record.meal_type === filterMeal;
       const matchesDate = !filterDate || record.meal_date === filterDate;
       
       return matchesName && matchesGroup && matchesMeal && matchesDate;
@@ -98,8 +98,8 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
 
   const clearFilters = () => {
     setSearchName('');
-    setFilterGroup('');
-    setFilterMeal('');
+    setFilterGroup('all');
+    setFilterMeal('all');
     setFilterDate('');
     setCurrentPage(1);
   };
@@ -190,7 +190,7 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
                 <SelectValue placeholder="Todos os grupos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os grupos</SelectItem>
+                <SelectItem value="all">Todos os grupos</SelectItem>
                 <SelectItem value="operacao">Operação</SelectItem>
                 <SelectItem value="projetos">Projetos</SelectItem>
               </SelectContent>
@@ -201,7 +201,7 @@ const MealRecordsTable = ({ records, loading, onRecordsUpdated }: MealRecordsTab
                 <SelectValue placeholder="Todas as refeições" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as refeições</SelectItem>
+                <SelectItem value="all">Todas as refeições</SelectItem>
                 <SelectItem value="breakfast">Café</SelectItem>
                 <SelectItem value="lunch">Almoço</SelectItem>
               </SelectContent>
