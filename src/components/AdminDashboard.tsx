@@ -271,7 +271,17 @@ const AdminDashboard = () => {
       <div className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
+              {/* Logo Mizu */}
+              <div className="flex items-center">
+                <img 
+                  src="/lovable-uploads/d38ceb0f-90a2-4150-bb46-ea05261ceb60.png" 
+                  alt="Mizu Cimentos" 
+                  className="h-12 w-auto"
+                />
+              </div>
+              
+              {/* RefeiControl */}
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-slate-900 rounded-lg">
                   <Shield className="h-6 w-6 text-white" />

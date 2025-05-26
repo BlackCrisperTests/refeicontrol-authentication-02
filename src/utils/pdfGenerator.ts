@@ -15,26 +15,37 @@ export interface ReportData {
 export const generatePDF = (reportData: ReportData): void => {
   const doc = new jsPDF();
   
-  // Header com logo/título
+  // Header com logos
   doc.setFontSize(20);
   doc.setTextColor(40, 40, 40);
-  doc.text('RefeiControl', 20, 25);
+  
+  // Logo Mizu (lado esquerdo)
+  try {
+    const mizuLogo = new Image();
+    mizuLogo.src = '/lovable-uploads/d38ceb0f-90a2-4150-bb46-ea05261ceb60.png';
+    doc.addImage(mizuLogo, 'PNG', 20, 15, 40, 15);
+  } catch (error) {
+    console.log('Logo Mizu não pôde ser carregada no PDF');
+  }
+  
+  // RefeiControl (lado direito)
+  doc.text('RefeiControl', 150, 25);
   
   doc.setFontSize(16);
-  doc.text(reportData.title, 20, 40);
+  doc.text(reportData.title, 20, 45);
   
   doc.setFontSize(12);
   doc.setTextColor(100, 100, 100);
-  doc.text(reportData.subtitle, 20, 50);
+  doc.text(reportData.subtitle, 20, 55);
   
   // Informações do relatório
   doc.setFontSize(10);
-  doc.text(`Gerado por: ${reportData.adminName}`, 20, 65);
-  doc.text(`Data/Hora: ${reportData.generatedAt}`, 20, 72);
+  doc.text(`Gerado por: ${reportData.adminName}`, 20, 70);
+  doc.text(`Data/Hora: ${reportData.generatedAt}`, 20, 77);
   
   // Linha separadora
   doc.setDrawColor(200, 200, 200);
-  doc.line(20, 80, 190, 80);
+  doc.line(20, 85, 190, 85);
   
   // Tabela com dados
   autoTable(doc, {
@@ -42,7 +53,7 @@ export const generatePDF = (reportData: ReportData): void => {
     body: reportData.data.map(row => 
       reportData.columns.map(col => row[col.dataKey] || '-')
     ),
-    startY: 90,
+    startY: 95,
     styles: {
       fontSize: 9,
       cellPadding: 3,
@@ -65,7 +76,7 @@ export const generatePDF = (reportData: ReportData): void => {
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
     doc.text(
-      `Página ${i} de ${pageCount} - RefeiControl Sistema de Controle de Refeições`,
+      `Página ${i} de ${pageCount} - RefeiControl Sistema de Controle de Refeições - Mizu Cimentos`,
       doc.internal.pageSize.width / 2,
       doc.internal.pageSize.height - 10,
       { align: 'center' }
