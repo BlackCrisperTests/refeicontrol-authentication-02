@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Clock, Coffee, Utensils, Users, Building2, Search, QrCode } from 'lucide-react';
+import { Clock, Coffee, Utensils, Users, Building2, Search, QrCode, Sparkles, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -266,145 +265,220 @@ const PublicAccess = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl border-0 bg-white/95 backdrop-blur">
-        <CardHeader className="text-center space-y-4 pb-6">
-          <div className="flex justify-center">
-            <div className="p-3 bg-gradient-to-r from-blue-500 to-green-500 rounded-full">
-              <QrCode className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 p-4 flex items-center justify-center">
+      <div className="w-full max-w-lg">
+        {/* Header with animated logo */}
+        <div className="text-center mb-8">
+          <div className="relative inline-block">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur-xl opacity-20 animate-pulse"></div>
+            <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-3xl shadow-2xl">
+              <QrCode className="h-12 w-12 text-white mx-auto" />
             </div>
           </div>
-          <div>
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              RefeiControl
-            </CardTitle>
-            <p className="text-sm text-gray-600 mt-2">Sistema de Controle de Refeições</p>
+          
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mt-6 mb-2">
+            RefeiControl
+          </h1>
+          <p className="text-slate-600 text-lg font-medium">Sistema de Controle de Refeições</p>
+          
+          {/* Current time with modern styling */}
+          <div className="mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-2xl shadow-lg border border-white/20">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full">
+                <Clock className="h-4 w-4 text-white" />
+              </div>
+              <span className="font-mono text-lg font-semibold text-slate-700">
+                {currentTime.toLocaleTimeString('pt-BR')}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center justify-center gap-2 text-sm font-medium text-gray-700">
-            <Clock className="h-4 w-4" />
-            {currentTime.toLocaleTimeString('pt-BR')}
-          </div>
-        </CardHeader>
+        </div>
 
-        <CardContent className="space-y-6">
-          {/* Group Selection */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Selecione o Grupo</label>
-            <Select value={selectedGroup} onValueChange={setSelectedGroup as (value: string) => void}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Escolha seu grupo..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="operacao">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    Operação
-                  </div>
-                </SelectItem>
-                <SelectItem value="projetos">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    Projetos
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Main form card */}
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+          <CardContent className="p-8 space-y-8">
+            {/* Step indicator */}
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <div className={`h-2 w-8 rounded-full transition-all duration-300 ${
+                selectedGroup ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 'bg-slate-200'
+              }`}></div>
+              <div className={`h-2 w-8 rounded-full transition-all duration-300 ${
+                selectedGroup && (selectedName || customName) ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 'bg-slate-200'
+              }`}></div>
+              <div className={`h-2 w-8 rounded-full transition-all duration-300 ${
+                selectedGroup && (selectedName || customName) ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 'bg-slate-200'
+              }`}></div>
+            </div>
 
-          {/* Name Selection */}
-          {selectedGroup && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Seu Nome</label>
-              <div className="space-y-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Buscar nome..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+            {/* Group Selection */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="h-5 w-5 text-indigo-500" />
+                <label className="text-lg font-semibold text-slate-700">Selecione seu Grupo</label>
+              </div>
+              
+              <Select value={selectedGroup} onValueChange={setSelectedGroup as (value: string) => void}>
+                <SelectTrigger className="h-14 text-lg border-2 border-slate-200 hover:border-indigo-300 transition-all duration-200 bg-white/50">
+                  <SelectValue placeholder="Escolha seu grupo de trabalho..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="operacao" className="h-12 text-base">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-emerald-100 rounded-lg">
+                        <Building2 className="h-5 w-5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <div className="font-medium">Operação</div>
+                        <div className="text-sm text-slate-500">Equipe operacional</div>
+                      </div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="projetos" className="h-12 text-base">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <Users className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <div className="font-medium">Projetos</div>
+                        <div className="text-sm text-slate-500">Equipe de projetos</div>
+                      </div>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Name Selection with animation */}
+            {selectedGroup && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="h-5 w-5 text-indigo-500" />
+                  <label className="text-lg font-semibold text-slate-700">Identifique-se</label>
                 </div>
                 
-                <Select value={selectedName} onValueChange={setSelectedName}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione seu nome..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredUsers
-                      .filter(name => {
-                        const isValid = isValidUserName(name);
-                        console.log('Filtering for SelectItem - name:', name, 'isValid:', isValid);
-                        return isValid;
-                      })
-                      .map((name) => {
-                        console.log('Rendering SelectItem for:', name);
-                        return (
-                          <SelectItem key={name} value={name}>
-                            {name}
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5 z-10" />
+                    <Input
+                      placeholder="Buscar seu nome..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="h-12 pl-12 text-base border-2 border-slate-200 hover:border-indigo-300 transition-all duration-200 bg-white/50"
+                    />
+                  </div>
+                  
+                  <Select value={selectedName} onValueChange={setSelectedName}>
+                    <SelectTrigger className="h-12 text-base border-2 border-slate-200 hover:border-indigo-300 transition-all duration-200 bg-white/50">
+                      <SelectValue placeholder="Selecione seu nome..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {filteredUsers
+                        .filter(name => isValidUserName(name))
+                        .map((name) => (
+                          <SelectItem key={name} value={name} className="h-10">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              {name}
+                            </div>
                           </SelectItem>
-                        );
-                      })}
-                    <SelectItem value="outros">Outros (digitar nome)</SelectItem>
-                  </SelectContent>
-                </Select>
+                        ))}
+                      <SelectItem value="outros" className="h-10 border-t">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span className="font-medium">Outros (digitar nome)</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Custom Name Input */}
-          {selectedName === 'outros' && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Digite seu nome</label>
-              <Input
-                placeholder="Seu nome completo..."
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-              />
-            </div>
-          )}
+            {/* Custom Name Input with animation */}
+            {selectedName === 'outros' && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="flex items-center gap-2 mb-3">
+                  <Timer className="h-5 w-5 text-indigo-500" />
+                  <label className="text-lg font-semibold text-slate-700">Digite seu nome</label>
+                </div>
+                <Input
+                  placeholder="Seu nome completo..."
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  className="h-12 text-base border-2 border-slate-200 hover:border-indigo-300 transition-all duration-200 bg-white/50"
+                />
+              </div>
+            )}
 
-          {/* Meal Buttons */}
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              onClick={() => handleMealRegistration('breakfast')}
-              disabled={!canRegisterBreakfast || loading}
-              className={`h-20 flex flex-col gap-2 ${
-                canRegisterBreakfast 
-                  ? 'bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600' 
-                  : 'bg-gray-300 cursor-not-allowed'
-              }`}
-            >
-              <Coffee className="h-6 w-6" />
-              <span className="text-sm font-medium">Café da Manhã</span>
-              <span className="text-xs opacity-80">{getBreakfastTimeRange()}</span>
-            </Button>
+            {/* Meal Buttons with enhanced design */}
+            {selectedGroup && (selectedName || (selectedName === 'outros' && customName)) && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="text-center">
+                  <h3 className="text-xl font-semibold text-slate-700 mb-2">Registrar Refeição</h3>
+                  <p className="text-slate-500">Selecione a refeição que deseja registrar</p>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Breakfast Button */}
+                  <Button
+                    onClick={() => handleMealRegistration('breakfast')}
+                    disabled={!canRegisterBreakfast || loading}
+                    className={`h-20 flex items-center gap-4 justify-start px-6 text-left transition-all duration-300 ${
+                      canRegisterBreakfast 
+                        ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-lg hover:shadow-xl hover:scale-[1.02]' 
+                        : 'bg-slate-200 cursor-not-allowed opacity-60'
+                    }`}
+                  >
+                    <div className={`p-3 rounded-xl ${canRegisterBreakfast ? 'bg-white/20' : 'bg-slate-300'}`}>
+                      <Coffee className="h-8 w-8" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-lg font-semibold">Café da Manhã</div>
+                      <div className="text-sm opacity-90">{getBreakfastTimeRange()}</div>
+                    </div>
+                    {canRegisterBreakfast && (
+                      <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                    )}
+                  </Button>
 
-            <Button
-              onClick={() => handleMealRegistration('lunch')}
-              disabled={!canRegisterLunch || loading}
-              className={`h-20 flex flex-col gap-2 ${
-                canRegisterLunch 
-                  ? 'bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600' 
-                  : 'bg-gray-300 cursor-not-allowed'
-              }`}
-            >
-              <Utensils className="h-6 w-6" />
-              <span className="text-sm font-medium">Almoço</span>
-              <span className="text-xs opacity-80">{getLunchTimeRange()}</span>
-            </Button>
-          </div>
+                  {/* Lunch Button */}
+                  <Button
+                    onClick={() => handleMealRegistration('lunch')}
+                    disabled={!canRegisterLunch || loading}
+                    className={`h-20 flex items-center gap-4 justify-start px-6 text-left transition-all duration-300 ${
+                      canRegisterLunch 
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 shadow-lg hover:shadow-xl hover:scale-[1.02]' 
+                        : 'bg-slate-200 cursor-not-allowed opacity-60'
+                    }`}
+                  >
+                    <div className={`p-3 rounded-xl ${canRegisterLunch ? 'bg-white/20' : 'bg-slate-300'}`}>
+                      <Utensils className="h-8 w-8" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-lg font-semibold">Almoço</div>
+                      <div className="text-sm opacity-90">{getLunchTimeRange()}</div>
+                    </div>
+                    {canRegisterLunch && (
+                      <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-          <div className="text-center pt-4">
-            <a 
-              href="/admin" 
-              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              Acesso Administrativo
-            </a>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Admin Access */}
+        <div className="text-center mt-8">
+          <a 
+            href="/admin" 
+            className="inline-flex items-center gap-2 px-6 py-3 text-slate-600 hover:text-indigo-600 transition-all duration-200 bg-white/60 hover:bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl border border-white/20"
+          >
+            <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+            Acesso Administrativo
+          </a>
+        </div>
+      </div>
     </div>
   );
 };

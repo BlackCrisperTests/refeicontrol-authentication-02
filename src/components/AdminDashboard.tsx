@@ -18,7 +18,10 @@ import {
   FileText,
   Loader2,
   Settings,
-  UserCog
+  UserCog,
+  Shield,
+  Activity,
+  TrendingUp
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -310,113 +313,170 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              RefeiControl Admin
-            </h1>
-            <p className="text-gray-600">Painel Administrativo</p>
+    <div className="min-h-screen bg-slate-50">
+      {/* Professional Header */}
+      <div className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-slate-900 rounded-lg">
+                  <Shield className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-slate-900">RefeiControl</h1>
+                  <p className="text-sm text-slate-600 font-medium">Painel Administrativo</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg">
+                <Activity className="h-4 w-4 text-slate-600" />
+                <span className="text-sm font-medium text-slate-700">Sistema Ativo</span>
+              </div>
+              <Button 
+                onClick={handleLogout} 
+                variant="outline" 
+                className="flex items-center gap-2 border-slate-300 hover:bg-slate-100"
+              >
+                <LogOut className="h-4 w-4" />
+                Sair
+              </Button>
+            </div>
           </div>
-          <Button onClick={handleLogout} variant="outline" className="flex items-center gap-2">
-            <LogOut className="h-4 w-4" />
-            Sair
-          </Button>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Enhanced Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-orange-50 to-orange-100/50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-orange-700 mb-1">Café da Manhã Hoje</p>
+                  {statsLoading ? (
+                    <Loader2 className="h-6 w-6 text-orange-600 animate-spin" />
+                  ) : (
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-3xl font-bold text-orange-800">{breakfastToday}</p>
+                      <span className="text-sm text-orange-600">registros</span>
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 bg-orange-500 rounded-xl">
+                  <Coffee className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-blue-100/50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-700 mb-1">Almoço Hoje</p>
+                  {statsLoading ? (
+                    <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+                  ) : (
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-3xl font-bold text-blue-800">{lunchToday}</p>
+                      <span className="text-sm text-blue-600">registros</span>
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 bg-blue-500 rounded-xl">
+                  <Utensils className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-emerald-100/50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-emerald-700 mb-1">Equipe Operação</p>
+                  {statsLoading ? (
+                    <Loader2 className="h-6 w-6 text-emerald-600 animate-spin" />
+                  ) : (
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-3xl font-bold text-emerald-800">{operacaoToday}</p>
+                      <span className="text-sm text-emerald-600">hoje</span>
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 bg-emerald-500 rounded-xl">
+                  <Building2 className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-purple-100/50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-purple-700 mb-1">Equipe Projetos</p>
+                  {statsLoading ? (
+                    <Loader2 className="h-6 w-6 text-purple-600 animate-spin" />
+                  ) : (
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-3xl font-bold text-purple-800">{projetosToday}</p>
+                      <span className="text-sm text-purple-600">hoje</span>
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 bg-purple-500 rounded-xl">
+                  <Users className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Café Hoje</p>
-                  {statsLoading ? (
-                    <Loader2 className="h-5 w-5 text-orange-600 animate-spin" />
-                  ) : (
-                    <p className="text-2xl font-bold text-orange-600">{breakfastToday}</p>
-                  )}
-                </div>
-                <Coffee className="h-8 w-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Almoço Hoje</p>
-                  {statsLoading ? (
-                    <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
-                  ) : (
-                    <p className="text-2xl font-bold text-blue-600">{lunchToday}</p>
-                  )}
-                </div>
-                <Utensils className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Operação</p>
-                  {statsLoading ? (
-                    <Loader2 className="h-5 w-5 text-green-600 animate-spin" />
-                  ) : (
-                    <p className="text-2xl font-bold text-green-600">{operacaoToday}</p>
-                  )}
-                </div>
-                <Building2 className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Projetos</p>
-                  {statsLoading ? (
-                    <Loader2 className="h-5 w-5 text-purple-600 animate-spin" />
-                  ) : (
-                    <p className="text-2xl font-bold text-purple-600">{projetosToday}</p>
-                  )}
-                </div>
-                <Users className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content */}
+        {/* Professional Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Usuários
-            </TabsTrigger>
-            <TabsTrigger value="records" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Registros
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Configurações
-            </TabsTrigger>
-            <TabsTrigger value="admins" className="flex items-center gap-2">
-              <UserCog className="h-4 w-4" />
-              Administradores
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Relatórios
-            </TabsTrigger>
-          </TabsList>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2">
+            <TabsList className="grid w-full grid-cols-5 bg-transparent gap-1">
+              <TabsTrigger 
+                value="users" 
+                className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3"
+              >
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Usuários</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="records" 
+                className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3"
+              >
+                <Calendar className="h-4 w-4" />
+                <span className="hidden sm:inline">Registros</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="settings" 
+                className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Config.</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="admins" 
+                className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3"
+              >
+                <UserCog className="h-4 w-4" />
+                <span className="hidden sm:inline">Admins</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="reports" 
+                className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3"
+              >
+                <TrendingUp className="h-4 w-4" />
+                <span className="hidden sm:inline">Relatórios</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Users Tab */}
           <TabsContent value="users">
