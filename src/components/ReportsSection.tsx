@@ -7,13 +7,13 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { generatePDF, formatMealRecordForReport, formatUserForReport } from '@/utils/pdfGenerator';
 import { useAdminSession } from '@/hooks/useAdminSession';
-import { MealRecord, User } from '@/types/database.types';
+import { MealRecord, User, GroupType } from '@/types/database.types';
 import ReportFiltersComponent, { ReportFilters } from './ReportFilters';
 
 const ReportsSection = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const [filters, setFilters] = useState<ReportFilters>({});
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<Array<{ name: string; group_type: GroupType }>>([]);
   const adminSession = useAdminSession();
 
   // Fetch users for filter dropdown
@@ -21,7 +21,7 @@ const ReportsSection = () => {
     const fetchUsers = async () => {
       const { data, error } = await supabase
         .from('users')
-        .select('name')
+        .select('name, group_type')
         .eq('active', true)
         .order('name');
       
@@ -45,7 +45,7 @@ const ReportsSection = () => {
     }
 
     if (filters.group) {
-      query = query.eq('group_type', filters.group);
+      query = query.eq('group_type', filters.group as GroupType);
     }
 
     if (filters.date) {
@@ -199,7 +199,7 @@ const ReportsSection = () => {
         .lte('meal_date', endOfMonth);
 
       if (filters.group) {
-        query = query.eq('group_type', filters.group);
+        query = query.eq('group_type', filters.group as GroupType);
       }
 
       if (filters.user) {
@@ -256,7 +256,7 @@ const ReportsSection = () => {
         .order('name');
 
       if (filters.group) {
-        usersQuery = usersQuery.eq('group_type', filters.group);
+        usersQuery = usersQuery.eq('group_type', filters.group as GroupType);
       }
 
       if (filters.user) {
@@ -281,7 +281,7 @@ const ReportsSection = () => {
       }
 
       if (filters.group) {
-        recordsQuery = recordsQuery.eq('group_type', filters.group);
+        recordsQuery = recordsQuery.eq('group_type', filters.group as GroupType);
       }
 
       if (filters.user) {
@@ -360,7 +360,7 @@ const ReportsSection = () => {
       }
 
       if (filters.group) {
-        query = query.eq('group_type', filters.group);
+        query = query.eq('group_type', filters.group as GroupType);
       }
 
       if (filters.user) {
