@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { MealRecord, User } from '@/types/database.types';
@@ -28,7 +27,7 @@ export const generatePDF = (reportData: ReportData): void => {
     console.log('Logo Mizu não pôde ser carregada no PDF');
   }
   
-  // Logo RefeiControl (centro)
+  // Logo RefeiControl (centro) - apenas a logo
   try {
     const refeiLogo = new Image();
     refeiLogo.src = '/lovable-uploads/da23f7ca-e2dc-473a-8266-22c9c492e5d0.png';
@@ -36,9 +35,6 @@ export const generatePDF = (reportData: ReportData): void => {
   } catch (error) {
     console.log('Logo RefeiControl não pôde ser carregada no PDF');
   }
-  
-  // RefeiControl (lado direito)
-  doc.text('RefeiControl', 120, 25);
   
   doc.setFontSize(16);
   doc.text(reportData.title, 20, 45);
