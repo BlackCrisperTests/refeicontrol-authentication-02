@@ -1,5 +1,5 @@
 
-export type GroupType = 'operacao' | 'projetos';
+export type GroupType = 'operacao' | 'projetos' | 'pxa' | 'visitantes';
 export type MealType = 'breakfast' | 'lunch';
 
 export interface Group {
