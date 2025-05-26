@@ -5,8 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { User } from '@/types/database.types';
-import { Users, Edit, Trash2, UserCheck, Clock } from 'lucide-react';
-import { useGroups } from '@/hooks/useGroups';
+import { Users, Edit, Trash2, Building2, Briefcase, UserCheck, Clock } from 'lucide-react';
 
 interface UsersListProps {
   users: User[];
@@ -16,8 +15,6 @@ interface UsersListProps {
 }
 
 const UsersList = ({ users, loading, onEditUser, onDeleteUser }: UsersListProps) => {
-  const { groups } = useGroups();
-
   if (loading) {
     return (
       <Card className="border-0 shadow-sm h-[600px]">
@@ -31,18 +28,8 @@ const UsersList = ({ users, loading, onEditUser, onDeleteUser }: UsersListProps)
     );
   }
 
-  // Create a map of group_id to group for quick lookup
-  const groupsMap = groups.reduce((acc, group) => {
-    acc[group.id] = group;
-    return acc;
-  }, {} as Record<string, any>);
-
-  // Group counts using the new group system
   const groupCounts = users.reduce((acc, user) => {
-    const group = user.group_id ? groupsMap[user.group_id] : null;
-    if (group) {
-      acc[group.id] = (acc[group.id] || 0) + 1;
-    }
+    acc[user.group_type] = (acc[user.group_type] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -60,28 +47,17 @@ const UsersList = ({ users, loading, onEditUser, onDeleteUser }: UsersListProps)
             </div>
           </CardTitle>
           
-          <div className="flex gap-3 flex-wrap">
-            {groups.map((group) => (
-              <div 
-                key={group.id}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border"
-                style={{ 
-                  backgroundColor: `${group.color}20`, 
-                  borderColor: `${group.color}40` 
-                }}
-              >
-                <div 
-                  className="h-4 w-4 rounded-full"
-                  style={{ backgroundColor: group.color }}
-                />
-                <span className="text-sm font-semibold" style={{ color: group.color }}>
-                  {groupCounts[group.id] || 0}
-                </span>
-                <span className="text-xs" style={{ color: group.color }}>
-                  {group.display_name}
-                </span>
-              </div>
-            ))}
+          <div className="flex gap-3">
+            <div className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-lg border border-red-200">
+              <Building2 className="h-4 w-4 text-red-600" />
+              <span className="text-sm font-semibold text-red-700">{groupCounts.operacao || 0}</span>
+              <span className="text-xs text-red-600">Operação</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
+              <Briefcase className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-semibold text-blue-700">{groupCounts.projetos || 0}</span>
+              <span className="text-xs text-blue-600">Projetos</span>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -98,90 +74,81 @@ const UsersList = ({ users, loading, onEditUser, onDeleteUser }: UsersListProps)
         ) : (
           <ScrollArea className="h-full">
             <div className="divide-y divide-slate-100">
-              {users.map((user, index) => {
-                const group = user.group_id ? groupsMap[user.group_id] : null;
-                
-                return (
-                  <div key={user.id} className="p-6 hover:bg-slate-50/50 transition-colors duration-150">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        {/* User Avatar */}
-                        <div className={`relative p-3 rounded-xl`} style={{ 
-                          backgroundColor: group ? `${group.color}20` : '#f1f5f9'
-                        }}>
-                          <div 
-                            className="h-6 w-6 rounded-full flex items-center justify-center"
-                            style={{ 
-                              backgroundColor: group ? group.color : '#64748b',
-                              color: 'white'
-                            }}
+              {users.map((user, index) => (
+                <div key={user.id} className="p-6 hover:bg-slate-50/50 transition-colors duration-150">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {/* User Avatar */}
+                      <div className={`relative p-3 rounded-xl ${
+                        user.group_type === 'operacao' 
+                          ? 'bg-red-100' 
+                          : 'bg-blue-100'
+                      }`}>
+                        {user.group_type === 'operacao' ? (
+                          <Building2 className="h-6 w-6 text-red-600" />
+                        ) : (
+                          <Briefcase className="h-6 w-6 text-blue-600" />
+                        )}
+                        {user.active && (
+                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                            <UserCheck className="h-2 w-2 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* User Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-1">
+                          <h4 className="text-lg font-semibold text-slate-900 truncate">{user.name}</h4>
+                          <Badge 
+                            variant="outline"
+                            className={`px-2 py-1 text-xs font-medium border ${
+                              user.group_type === 'operacao' 
+                                ? 'bg-red-50 text-red-700 border-red-200' 
+                                : 'bg-blue-50 text-blue-700 border-blue-200'
+                            }`}
                           >
-                            {user.name.charAt(0).toUpperCase()}
+                            {user.group_type === 'operacao' ? 'Operação' : 'Projetos'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 text-sm text-slate-600">
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            <span>Cadastrado em {new Date(user.created_at).toLocaleDateString('pt-BR')}</span>
                           </div>
                           {user.active && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-                              <UserCheck className="h-2 w-2 text-white" />
+                            <div className="flex items-center gap-1 text-green-600">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span className="font-medium">Ativo</span>
                             </div>
                           )}
                         </div>
-                        
-                        {/* User Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-1">
-                            <h4 className="text-lg font-semibold text-slate-900 truncate">{user.name}</h4>
-                            {group && (
-                              <Badge 
-                                variant="outline"
-                                className="px-2 py-1 text-xs font-medium border"
-                                style={{ 
-                                  backgroundColor: `${group.color}20`,
-                                  color: group.color,
-                                  borderColor: `${group.color}40`
-                                }}
-                              >
-                                {group.display_name}
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center gap-4 text-sm text-slate-600">
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              <span>Cadastrado em {new Date(user.created_at).toLocaleDateString('pt-BR')}</span>
-                            </div>
-                            {user.active && (
-                              <div className="flex items-center gap-1 text-green-600">
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span className="font-medium">Ativo</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => onEditUser(user)}
-                          className="h-9 w-9 p-0 border-slate-300 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => onDeleteUser(user)}
-                          className="h-9 w-9 p-0 border-slate-300 hover:bg-red-50 hover:border-red-300 hover:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
+                    
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => onEditUser(user)}
+                        className="h-9 w-9 p-0 border-slate-300 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => onDeleteUser(user)}
+                        className="h-9 w-9 p-0 border-slate-300 hover:bg-red-50 hover:border-red-300 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </ScrollArea>
         )}

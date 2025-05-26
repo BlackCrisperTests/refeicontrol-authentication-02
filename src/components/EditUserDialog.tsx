@@ -7,9 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@/types/database.types';
+import { User, GroupType } from '@/types/database.types';
 import { Loader2 } from 'lucide-react';
-import { useGroups } from '@/hooks/useGroups';
 
 interface EditUserDialogProps {
   user: User | null;
@@ -20,22 +19,21 @@ interface EditUserDialogProps {
 
 const EditUserDialog = ({ user, isOpen, onClose, onUserUpdated }: EditUserDialogProps) => {
   const [name, setName] = useState(user?.name || '');
-  const [selectedGroupId, setSelectedGroupId] = useState<string>(user?.group_id || '');
+  const [groupType, setGroupType] = useState<GroupType>(user?.group_type || 'operacao');
   const [loading, setLoading] = useState(false);
-  const { groups } = useGroups();
 
   React.useEffect(() => {
     if (user) {
       setName(user.name);
-      setSelectedGroupId(user.group_id || '');
+      setGroupType(user.group_type);
     }
   }, [user]);
 
   const handleSave = async () => {
-    if (!user || !name.trim() || !selectedGroupId) {
+    if (!user || !name.trim()) {
       toast({
         title: "Erro",
-        description: "Nome e grupo são obrigatórios.",
+        description: "Nome é obrigatório.",
         variant: "destructive"
       });
       return;
@@ -44,14 +42,11 @@ const EditUserDialog = ({ user, isOpen, onClose, onUserUpdated }: EditUserDialog
     setLoading(true);
     
     try {
-      const selectedGroup = groups.find(g => g.id === selectedGroupId);
-      
       const { error } = await supabase
         .from('users')
         .update({
           name: name.trim(),
-          group_id: selectedGroupId,
-          group_type: selectedGroup?.name as any
+          group_type: groupType
         })
         .eq('id', user.id);
 
@@ -98,25 +93,16 @@ const EditUserDialog = ({ user, isOpen, onClose, onUserUpdated }: EditUserDialog
           <div className="space-y-2">
             <Label htmlFor="editGroup">Grupo</Label>
             <Select 
-              value={selectedGroupId} 
-              onValueChange={setSelectedGroupId}
+              value={groupType} 
+              onValueChange={(value) => setGroupType(value as GroupType)}
               disabled={loading}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o grupo..." />
               </SelectTrigger>
               <SelectContent>
-                {groups.map((group) => (
-                  <SelectItem key={group.id} value={group.id}>
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: group.color }}
-                      />
-                      {group.display_name}
-                    </div>
-                  </SelectItem>
-                ))}
+                <SelectItem value="operacao">Operação</SelectItem>
+                <SelectItem value="projetos">Projetos</SelectItem>
               </SelectContent>
             </Select>
           </div>

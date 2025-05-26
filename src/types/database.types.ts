@@ -1,22 +1,12 @@
 
+
 export type GroupType = 'operacao' | 'projetos';
 export type MealType = 'breakfast' | 'lunch';
-
-export interface Group {
-  id: string;
-  name: string;
-  display_name: string;
-  color: string;
-  active: boolean;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface User {
   id: string;
   name: string;
   group_type: GroupType;
-  group_id?: string | null;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -37,7 +27,6 @@ export interface MealRecord {
   user_id?: string | null;
   user_name: string;
   group_type: GroupType;
-  group_id?: string | null;
   meal_type: MealType;
   meal_date: string;
   meal_time: string;
@@ -52,3 +41,4 @@ export interface SystemSettings {
   lunch_deadline: string;
   updated_at: string;
 }
+
