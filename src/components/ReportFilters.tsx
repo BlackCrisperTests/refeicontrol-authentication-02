@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Filter, X } from 'lucide-react';
+import { useGroups } from '@/hooks/useGroups';
 
 export interface ReportFilters {
   month?: string;
@@ -29,6 +30,8 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
   users,
   className = ""
 }) => {
+  const { groups } = useGroups();
+
   const months = [
     { value: '01', label: 'Janeiro' },
     { value: '02', label: 'Fevereiro' },
@@ -111,8 +114,17 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os grupos</SelectItem>
-                <SelectItem value="operacao">Operação</SelectItem>
-                <SelectItem value="projetos">Projetos</SelectItem>
+                {groups.map((group) => (
+                  <SelectItem key={group.id} value={group.name}>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: group.color }}
+                      />
+                      {group.display_name}
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

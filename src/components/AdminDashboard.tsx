@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -41,8 +42,7 @@ const AdminDashboard = () => {
   // Stats
   const [breakfastToday, setBreakfastToday] = useState(0);
   const [lunchToday, setLunchToday] = useState(0);
-  const [operacaoToday, setOperacaoToday] = useState(0);
-  const [projetosToday, setProjetosToday] = useState(0);
+  const [groupStats, setGroupStats] = useState<{[key: string]: number}>({});
 
   // Verificar autenticação
   useEffect(() => {
@@ -141,26 +141,24 @@ const AdminDashboard = () => {
         .eq('meal_type', 'lunch');
       if (lunchError) throw lunchError;
 
-      // Operacao count
-      const { data: operacaoData, error: operacaoError } = await supabase
+      // Group statistics
+      const { data: groupData, error: groupError } = await supabase
         .from('meal_records')
-        .select('id')
-        .eq('meal_date', today)
-        .eq('group_type', 'operacao');
-      if (operacaoError) throw operacaoError;
+        .select('group_id')
+        .eq('meal_date', today);
+      if (groupError) throw groupError;
 
-      // Projetos count
-      const { data: projetosData, error: projetosError } = await supabase
-        .from('meal_records')
-        .select('id')
-        .eq('meal_date', today)
-        .eq('group_type', 'projetos');
-      if (projetosError) throw projetosError;
+      // Count by group
+      const groupCounts = groupData.reduce((acc: {[key: string]: number}, record) => {
+        if (record.group_id) {
+          acc[record.group_id] = (acc[record.group_id] || 0) + 1;
+        }
+        return acc;
+      }, {});
 
       setBreakfastToday(breakfastData.length);
       setLunchToday(lunchData.length);
-      setOperacaoToday(operacaoData.length);
-      setProjetosToday(projetosData.length);
+      setGroupStats(groupCounts);
     } catch (error: any) {
       console.error('Error fetching stats:', error);
       toast({
@@ -382,47 +380,54 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-emerald-100/50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium mb-1 text-red-800">Equipe Operação</p>
-                  {statsLoading ? (
-                    <Loader2 className="h-6 w-6 text-emerald-600 animate-spin" />
-                  ) : (
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-3xl font-bold text-red-800">{operacaoToday}</p>
-                      <span className="text-sm text-red-800">hoje</span>
-                    </div>
-                  )}
+          {/* Dynamic Group Stats */}
+          {groups.slice(0, 2).map((group, index) => (
+            <Card key={group.id} className={`border-0 shadow-sm ${
+              index === 0 
+                ? 'bg-gradient-to-br from-emerald-50 to-emerald-100/50' 
+                : 'bg-gradient-to-br from-purple-50 to-purple-100/50'
+            }`}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-sm font-medium mb-1 ${
+                      index === 0 ? 'text-emerald-700' : 'text-purple-700'
+                    }`}>
+                      {group.display_name}
+                    </p>
+                    {statsLoading ? (
+                      <Loader2 className={`h-6 w-6 animate-spin ${
+                        index === 0 ? 'text-emerald-600' : 'text-purple-600'
+                      }`} />
+                    ) : (
+                      <div className="flex items-baseline gap-2">
+                        <p className={`text-3xl font-bold ${
+                          index === 0 ? 'text-emerald-800' : 'text-purple-800'
+                        }`}>
+                          {groupStats[group.id] || 0}
+                        </p>
+                        <span className={`text-sm ${
+                          index === 0 ? 'text-emerald-600' : 'text-purple-600'
+                        }`}>
+                          hoje
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div 
+                    className="p-3 rounded-xl"
+                    style={{ backgroundColor: group.color }}
+                  >
+                    {index === 0 ? (
+                      <Building2 className="h-8 w-8 text-white" />
+                    ) : (
+                      <Users className="h-8 w-8 text-white" />
+                    )}
+                  </div>
                 </div>
-                <div className="p-3 rounded-xl bg-red-500">
-                  <Building2 className="h-8 w-8 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-purple-100/50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium mb-1 text-blue-800">Equipe Projetos</p>
-                  {statsLoading ? (
-                    <Loader2 className="h-6 w-6 text-purple-600 animate-spin" />
-                  ) : (
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-3xl font-bold text-blue-700">{projetosToday}</p>
-                      <span className="text-sm text-blue-700">hoje</span>
-                    </div>
-                  )}
-                </div>
-                <div className="p-3 rounded-xl bg-blue-800">
-                  <Users className="h-8 w-8 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {/* Professional Tabs */}

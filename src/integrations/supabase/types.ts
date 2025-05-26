@@ -193,7 +193,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      group_type: "operacao" | "projetos"
+      group_type: "operacao" | "projetos" | "pxa" | "visitantes"
       meal_type: "breakfast" | "lunch"
     }
     CompositeTypes: {
@@ -310,7 +310,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      group_type: ["operacao", "projetos"],
+      group_type: ["operacao", "projetos", "pxa", "visitantes"],
       meal_type: ["breakfast", "lunch"],
     },
   },

@@ -1,23 +1,22 @@
+
 import React, { useState, useEffect } from 'react';
-import { Clock, Coffee, Utensils, Users, Building2, Search, QrCode, Sparkles, Timer, CheckCircle } from 'lucide-react';
+import { Clock, Coffee, Utensils, Search, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { GroupType, MealType, User, SystemSettings } from '@/types/database.types';
+import { MealType, User, SystemSettings } from '@/types/database.types';
+import DynamicGroupSelector from './DynamicGroupSelector';
 
 const PublicAccess = () => {
-  const [selectedGroup, setSelectedGroup] = useState<GroupType | ''>('');
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedGroupName, setSelectedGroupName] = useState<string>('');
   const [selectedName, setSelectedName] = useState('');
   const [customName, setCustomName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [users, setUsers] = useState<{[key in GroupType]: string[]}>({
-    operacao: [],
-    projetos: []
-  });
+  const [users, setUsers] = useState<User[]>([]);
   const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -50,9 +49,12 @@ const PublicAccess = () => {
   // Fetch users from Supabase
   useEffect(() => {
     const fetchUsers = async () => {
+      if (!selectedGroup) return;
+      
       const { data, error } = await supabase
         .from('users')
-        .select('name, group_type')
+        .select('*')
+        .eq('group_id', selectedGroup)
         .eq('active', true);
 
       if (error) {
@@ -66,31 +68,11 @@ const PublicAccess = () => {
       }
 
       console.log('Raw user data from database:', data);
-
-      const groupedUsers: {[key in GroupType]: string[]} = {
-        operacao: [],
-        projetos: []
-      };
-
-      data?.forEach((user: { name: string, group_type: GroupType }) => {
-        console.log('Processing user:', user);
-        
-        // Only add users with valid names
-        if (isValidUserName(user.name) && groupedUsers[user.group_type]) {
-          const trimmedName = user.name.trim();
-          console.log('Adding valid user:', trimmedName, 'to group:', user.group_type);
-          groupedUsers[user.group_type].push(trimmedName);
-        } else {
-          console.warn('Skipping invalid user:', user);
-        }
-      });
-
-      console.log('Final grouped users:', groupedUsers);
-      setUsers(groupedUsers);
+      setUsers(data || []);
     };
 
     fetchUsers();
-  }, []);
+  }, [selectedGroup]);
 
   // Fetch system settings from Supabase
   useEffect(() => {
@@ -117,15 +99,9 @@ const PublicAccess = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const allUsers = [...users.operacao, ...users.projetos];
-  
-  const filteredUsers = selectedGroup 
-    ? users[selectedGroup].filter(name => 
-        isValidUserName(name) && name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : allUsers.filter(name => 
-        isValidUserName(name) && name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  const filteredUsers = users.filter(user => 
+    isValidUserName(user.name) && user.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   console.log('Filtered users for rendering:', filteredUsers);
 
@@ -147,6 +123,14 @@ const PublicAccess = () => {
     if (!systemSettings) return 'Não configurado';
     const startTime = systemSettings.lunch_start_time || '11:00';
     return `${startTime} às ${systemSettings.lunch_deadline}`;
+  };
+
+  const handleGroupSelect = (groupId: string, groupName: string) => {
+    setSelectedGroup(groupId);
+    setSelectedGroupName(groupName);
+    setSelectedName('');
+    setCustomName('');
+    setSearchTerm('');
   };
 
   const handleMealRegistration = async (mealType: MealType) => {
@@ -193,15 +177,9 @@ const PublicAccess = () => {
       // Try to find user ID if it's a registered user
       let userId = null;
       if (selectedName !== 'outros') {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('id')
-          .eq('name', userName)
-          .eq('group_type', selectedGroup)
-          .single();
-        
-        if (userData) {
-          userId = userData.id;
+        const selectedUser = users.find(user => user.name === userName);
+        if (selectedUser) {
+          userId = selectedUser.id;
         }
       }
 
@@ -232,7 +210,8 @@ const PublicAccess = () => {
         .insert({
           user_id: userId,
           user_name: userName,
-          group_type: selectedGroup,
+          group_id: selectedGroup,
+          group_type: selectedGroupName as any,
           meal_type: mealType,
           meal_date: new Date().toISOString().split('T')[0],
           meal_time: currentTime.toTimeString().split(' ')[0]
@@ -248,7 +227,8 @@ const PublicAccess = () => {
       });
 
       // Reset form
-      setSelectedGroup('');
+      setSelectedGroup(null);
+      setSelectedGroupName('');
       setSelectedName('');
       setCustomName('');
       setSearchTerm('');
@@ -308,55 +288,10 @@ const PublicAccess = () => {
               </div>
             </CardHeader>
             <CardContent className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Button
-                  onClick={() => setSelectedGroup('operacao')}
-                  className={`h-24 text-xl font-bold transition-all duration-300 ${
-                    selectedGroup === 'operacao'
-                      ? 'bg-red-500 hover:bg-red-600 text-white scale-105 shadow-xl'
-                      : 'bg-white border-4 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-full ${
-                      selectedGroup === 'operacao' ? 'bg-white/20' : 'bg-red-100'
-                    }`}>
-                      <Building2 className="h-8 w-8" />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-2xl font-black">OPERAÇÃO</div>
-                      <div className="text-sm opacity-90">Equipe de produção</div>
-                    </div>
-                  </div>
-                  {selectedGroup === 'operacao' && (
-                    <CheckCircle className="h-6 w-6 ml-auto" />
-                  )}
-                </Button>
-
-                <Button
-                  onClick={() => setSelectedGroup('projetos')}
-                  className={`h-24 text-xl font-bold transition-all duration-300 ${
-                    selectedGroup === 'projetos'
-                      ? 'bg-blue-500 hover:bg-blue-600 text-white scale-105 shadow-xl'
-                      : 'bg-white border-4 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-full ${
-                      selectedGroup === 'projetos' ? 'bg-white/20' : 'bg-blue-100'
-                    }`}>
-                      <Users className="h-8 w-8" />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-2xl font-black">PROJETOS</div>
-                      <div className="text-sm opacity-90">Equipe de projetos</div>
-                    </div>
-                  </div>
-                  {selectedGroup === 'projetos' && (
-                    <CheckCircle className="h-6 w-6 ml-auto" />
-                  )}
-                </Button>
-              </div>
+              <DynamicGroupSelector
+                selectedGroup={selectedGroup}
+                onGroupSelect={handleGroupSelect}
+              />
             </CardContent>
           </Card>
 
@@ -389,23 +324,23 @@ const PublicAccess = () => {
                 {/* Lista de nomes mais visual */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
                   {filteredUsers
-                    .filter(name => isValidUserName(name))
-                    .map((name) => (
+                    .filter(user => isValidUserName(user.name))
+                    .map((user) => (
                       <Button
-                        key={name}
-                        onClick={() => setSelectedName(name)}
+                        key={user.id}
+                        onClick={() => setSelectedName(user.name)}
                         className={`h-14 text-lg font-semibold justify-start transition-all duration-200 ${
-                          selectedName === name
+                          selectedName === user.name
                             ? 'bg-green-500 hover:bg-green-600 text-white scale-105 shadow-lg'
                             : 'bg-white border-2 border-slate-200 text-slate-700 hover:bg-green-50 hover:border-green-300'
                         }`}
                       >
                         <div className="flex items-center gap-3 w-full">
                           <div className={`w-3 h-3 rounded-full ${
-                            selectedName === name ? 'bg-white' : 'bg-green-500'
+                            selectedName === user.name ? 'bg-white' : 'bg-green-500'
                           }`}></div>
-                          <span className="flex-1 text-left">{name}</span>
-                          {selectedName === name && (
+                          <span className="flex-1 text-left">{user.name}</span>
+                          {selectedName === user.name && (
                             <CheckCircle className="h-5 w-5" />
                           )}
                         </div>
