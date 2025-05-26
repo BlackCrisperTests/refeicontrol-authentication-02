@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Clock, Coffee, Utensils, Users, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,14 +6,16 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MealType } from '@/types/database.types';
-
 interface VisitorFlowProps {
   onCancel: () => void;
   currentTime: Date;
   systemSettings: any;
 }
-
-const VisitorFlow: React.FC<VisitorFlowProps> = ({ onCancel, currentTime, systemSettings }) => {
+const VisitorFlow: React.FC<VisitorFlowProps> = ({
+  onCancel,
+  currentTime,
+  systemSettings
+}) => {
   const [step, setStep] = useState<'area' | 'name' | 'meal'>('area');
   const [selectedArea, setSelectedArea] = useState<'operacao' | 'projetos' | null>(null);
   const [visitorName, setVisitorName] = useState('');
@@ -23,46 +24,32 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({ onCancel, currentTime, system
   // Helper function to check if current time is within allowed range
   const isWithinTimeRange = (startTime: string | null, endTime: string) => {
     if (!startTime) return false;
-    
     const now = currentTime;
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     const currentTimeInMinutes = currentHour * 60 + currentMinute;
-    
     const [startHour, startMinute] = startTime.split(':').map(Number);
     const startTimeInMinutes = startHour * 60 + startMinute;
-    
     const [endHour, endMinute] = endTime.split(':').map(Number);
     const endTimeInMinutes = endHour * 60 + endMinute;
-    
     return currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
   };
-
-  const canRegisterBreakfast = systemSettings 
-    ? isWithinTimeRange(systemSettings.breakfast_start_time, systemSettings.breakfast_deadline)
-    : false;
-
-  const canRegisterLunch = systemSettings
-    ? isWithinTimeRange(systemSettings.lunch_start_time, systemSettings.lunch_deadline)
-    : false;
-
+  const canRegisterBreakfast = systemSettings ? isWithinTimeRange(systemSettings.breakfast_start_time, systemSettings.breakfast_deadline) : false;
+  const canRegisterLunch = systemSettings ? isWithinTimeRange(systemSettings.lunch_start_time, systemSettings.lunch_deadline) : false;
   const getBreakfastTimeRange = () => {
     if (!systemSettings) return 'Não configurado';
     const startTime = systemSettings.breakfast_start_time || '06:00';
     return `${startTime} às ${systemSettings.breakfast_deadline}`;
   };
-
   const getLunchTimeRange = () => {
     if (!systemSettings) return 'Não configurado';
     const startTime = systemSettings.lunch_start_time || '11:00';
     return `${startTime} às ${systemSettings.lunch_deadline}`;
   };
-
   const handleAreaSelect = (area: 'operacao' | 'projetos') => {
     setSelectedArea(area);
     setStep('name');
   };
-
   const handleNameSubmit = () => {
     if (!visitorName.trim()) {
       toast({
@@ -74,10 +61,8 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({ onCancel, currentTime, system
     }
     setStep('meal');
   };
-
   const handleMealRegistration = async (mealType: MealType) => {
     if (!selectedArea || !visitorName.trim()) return;
-
     if (mealType === 'breakfast' && !canRegisterBreakfast) {
       toast({
         title: "Horário não permitido",
@@ -86,7 +71,6 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({ onCancel, currentTime, system
       });
       return;
     }
-
     if (mealType === 'lunch' && !canRegisterLunch) {
       toast({
         title: "Horário não permitido",
@@ -95,30 +79,26 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({ onCancel, currentTime, system
       });
       return;
     }
-
     setLoading(true);
-
     try {
       // Create the meal record for visitor
-      const { error } = await supabase
-        .from('meal_records')
-        .insert({
-          user_id: null,
-          user_name: `${visitorName} (Visitante)`,
-          group_id: null,
-          group_type: selectedArea as any,
-          meal_type: mealType,
-          meal_date: new Date().toISOString().split('T')[0],
-          meal_time: currentTime.toTimeString().split(' ')[0]
-        });
-
+      const {
+        error
+      } = await supabase.from('meal_records').insert({
+        user_id: null,
+        user_name: `${visitorName} (Visitante)`,
+        group_id: null,
+        group_type: selectedArea as any,
+        meal_type: mealType,
+        meal_date: new Date().toISOString().split('T')[0],
+        meal_time: currentTime.toTimeString().split(' ')[0]
+      });
       if (error) {
         throw error;
       }
-
       toast({
         title: "Sucesso!",
-        description: `${mealType === 'breakfast' ? 'Café da manhã' : 'Almoço'} registrado para ${visitorName} (Visitante de ${selectedArea === 'operacao' ? 'Operação' : 'Projetos'}).`,
+        description: `${mealType === 'breakfast' ? 'Café da manhã' : 'Almoço'} registrado para ${visitorName} (Visitante de ${selectedArea === 'operacao' ? 'Operação' : 'Projetos'}).`
       });
 
       // Reset and close
@@ -134,10 +114,8 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({ onCancel, currentTime, system
       setLoading(false);
     }
   };
-
   if (step === 'area') {
-    return (
-      <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
+    return <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
         <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white py-8">
           <div className="flex items-center gap-4">
             <div className="bg-white/20 p-4 rounded-full">
@@ -156,20 +134,14 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({ onCancel, currentTime, system
             </h3>
             
             <div className="grid grid-cols-1 gap-4">
-              <Button
-                onClick={() => handleAreaSelect('operacao')}
-                className="h-20 flex items-center gap-4 justify-start text-xl font-bold bg-blue-500 hover:bg-blue-600 text-white"
-              >
+              <Button onClick={() => handleAreaSelect('operacao')} className="h-20 flex items-center gap-4 justify-start text-xl font-bold text-white bg-red-500 hover:bg-red-400">
                 <div className="bg-white/20 p-3 rounded-xl">
                   <Building className="h-8 w-8" />
                 </div>
                 <span>OPERAÇÃO</span>
               </Button>
               
-              <Button
-                onClick={() => handleAreaSelect('projetos')}
-                className="h-20 flex items-center gap-4 justify-start text-xl font-bold bg-green-500 hover:bg-green-600 text-white"
-              >
+              <Button onClick={() => handleAreaSelect('projetos')} className="h-20 flex items-center gap-4 justify-start text-xl font-bold text-white bg-blue-700 hover:bg-blue-600">
                 <div className="bg-white/20 p-3 rounded-xl">
                   <Users className="h-8 w-8" />
                 </div>
@@ -178,23 +150,16 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({ onCancel, currentTime, system
             </div>
 
             <div className="flex justify-center mt-8">
-              <Button
-                onClick={onCancel}
-                variant="outline"
-                className="px-8 py-3 text-gray-600 hover:text-gray-800"
-              >
+              <Button onClick={onCancel} variant="outline" className="px-8 py-3 text-gray-600 hover:text-gray-800">
                 Cancelar
               </Button>
             </div>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
   if (step === 'name') {
-    return (
-      <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
+    return <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
         <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-8">
           <div className="flex items-center gap-4">
             <div className="bg-white/20 p-4 rounded-full">
@@ -212,42 +177,24 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({ onCancel, currentTime, system
               <label htmlFor="visitorName" className="block text-lg font-semibold text-gray-800 mb-3">
                 Seu nome completo:
               </label>
-              <Input
-                id="visitorName"
-                placeholder="Digite seu nome completo aqui..."
-                value={visitorName}
-                onChange={(e) => setVisitorName(e.target.value)}
-                className="h-16 text-xl border-4 border-orange-200 hover:border-orange-300 transition-all duration-200 bg-orange-50 rounded-2xl"
-                onKeyPress={(e) => e.key === 'Enter' && handleNameSubmit()}
-              />
+              <Input id="visitorName" placeholder="Digite seu nome completo aqui..." value={visitorName} onChange={e => setVisitorName(e.target.value)} className="h-16 text-xl border-4 border-orange-200 hover:border-orange-300 transition-all duration-200 bg-orange-50 rounded-2xl" onKeyPress={e => e.key === 'Enter' && handleNameSubmit()} />
             </div>
 
             <div className="flex gap-4 justify-center">
-              <Button
-                onClick={() => setStep('area')}
-                variant="outline"
-                className="px-8 py-3 text-gray-600 hover:text-gray-800"
-              >
+              <Button onClick={() => setStep('area')} variant="outline" className="px-8 py-3 text-gray-600 hover:text-gray-800">
                 Voltar
               </Button>
               
-              <Button
-                onClick={handleNameSubmit}
-                disabled={!visitorName.trim()}
-                className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white"
-              >
+              <Button onClick={handleNameSubmit} disabled={!visitorName.trim()} className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white">
                 Continuar
               </Button>
             </div>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
   if (step === 'meal') {
-    return (
-      <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
+    return <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
         <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white py-8">
           <div className="flex items-center gap-4">
             <div className="bg-white/20 p-4 rounded-full">
@@ -269,15 +216,7 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({ onCancel, currentTime, system
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Botão Café da Manhã */}
-              <Button
-                onClick={() => handleMealRegistration('breakfast')}
-                disabled={!canRegisterBreakfast || loading}
-                className={`h-32 flex flex-col gap-3 justify-center text-left transition-all duration-300 ${
-                  canRegisterBreakfast 
-                    ? 'bg-gradient-to-br from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white shadow-xl hover:shadow-2xl hover:scale-105' 
-                    : 'bg-slate-200 cursor-not-allowed opacity-60 text-slate-500'
-                }`}
-              >
+              <Button onClick={() => handleMealRegistration('breakfast')} disabled={!canRegisterBreakfast || loading} className={`h-32 flex flex-col gap-3 justify-center text-left transition-all duration-300 ${canRegisterBreakfast ? 'bg-gradient-to-br from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white shadow-xl hover:shadow-2xl hover:scale-105' : 'bg-slate-200 cursor-not-allowed opacity-60 text-slate-500'}`}>
                 <div className="flex items-center gap-4 w-full">
                   <div className={`p-4 rounded-2xl ${canRegisterBreakfast ? 'bg-white/20' : 'bg-slate-300'}`}>
                     <Coffee className="h-12 w-12" />
@@ -285,26 +224,16 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({ onCancel, currentTime, system
                   <div className="flex-1">
                     <div className="text-2xl font-black">CAFÉ DA MANHÃ</div>
                     <div className="text-lg opacity-90">{getBreakfastTimeRange()}</div>
-                    {canRegisterBreakfast && (
-                      <div className="flex items-center gap-2 mt-2">
+                    {canRegisterBreakfast && <div className="flex items-center gap-2 mt-2">
                         <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
                         <span className="text-sm font-semibold">DISPONÍVEL AGORA</span>
-                      </div>
-                    )}
+                      </div>}
                   </div>
                 </div>
               </Button>
 
               {/* Botão Almoço */}
-              <Button
-                onClick={() => handleMealRegistration('lunch')}
-                disabled={!canRegisterLunch || loading}
-                className={`h-32 flex flex-col gap-3 justify-center text-left transition-all duration-300 ${
-                  canRegisterLunch 
-                    ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl hover:scale-105' 
-                    : 'bg-slate-200 cursor-not-allowed opacity-60 text-slate-500'
-                }`}
-              >
+              <Button onClick={() => handleMealRegistration('lunch')} disabled={!canRegisterLunch || loading} className={`h-32 flex flex-col gap-3 justify-center text-left transition-all duration-300 ${canRegisterLunch ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl hover:scale-105' : 'bg-slate-200 cursor-not-allowed opacity-60 text-slate-500'}`}>
                 <div className="flex items-center gap-4 w-full">
                   <div className={`p-4 rounded-2xl ${canRegisterLunch ? 'bg-white/20' : 'bg-slate-300'}`}>
                     <Utensils className="h-12 w-12" />
@@ -312,34 +241,24 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({ onCancel, currentTime, system
                   <div className="flex-1">
                     <div className="text-2xl font-black">ALMOÇO</div>
                     <div className="text-lg opacity-90">{getLunchTimeRange()}</div>
-                    {canRegisterLunch && (
-                      <div className="flex items-center gap-2 mt-2">
+                    {canRegisterLunch && <div className="flex items-center gap-2 mt-2">
                         <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
                         <span className="text-sm font-semibold">DISPONÍVEL AGORA</span>
-                      </div>
-                    )}
+                      </div>}
                   </div>
                 </div>
               </Button>
             </div>
 
             <div className="flex justify-center mt-8">
-              <Button
-                onClick={() => setStep('name')}
-                variant="outline"
-                className="px-8 py-3 text-gray-600 hover:text-gray-800"
-                disabled={loading}
-              >
+              <Button onClick={() => setStep('name')} variant="outline" className="px-8 py-3 text-gray-600 hover:text-gray-800" disabled={loading}>
                 Voltar
               </Button>
             </div>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
   return null;
 };
-
 export default VisitorFlow;
