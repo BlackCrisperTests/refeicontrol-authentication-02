@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Clock, Coffee, Utensils, Search, CheckCircle } from 'lucide-react';
+import { Clock, Coffee, Utensils, Search, CheckCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { MealType, User, SystemSettings } from '@/types/database.types';
 import DynamicGroupSelector from './DynamicGroupSelector';
 import MatriculaVerification from './MatriculaVerification';
+import VisitorFlow from './VisitorFlow';
 
 const PublicAccess = () => {
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedGroupName, setSelectedGroupName] = useState<string>('');
   const [selectedName, setSelectedName] = useState('');
-  const [customName, setCustomName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [users, setUsers] = useState<User[]>([]);
@@ -23,6 +23,7 @@ const PublicAccess = () => {
   const [showMatriculaVerification, setShowMatriculaVerification] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isMatriculaVerified, setIsMatriculaVerified] = useState(false);
+  const [showVisitorFlow, setShowVisitorFlow] = useState(false);
 
   // Helper function to validate user names
   const isValidUserName = (name: any): boolean => {
@@ -133,33 +134,35 @@ const PublicAccess = () => {
     setSelectedGroup(groupId);
     setSelectedGroupName(groupName);
     setSelectedName('');
-    setCustomName('');
     setSearchTerm('');
     setShowMatriculaVerification(false);
     setIsMatriculaVerified(false);
     setSelectedUser(null);
+    setShowVisitorFlow(false);
   };
 
   const handleNameSelect = (userName: string) => {
     setSelectedName(userName);
     
-    if (userName !== 'outros') {
-      // Buscar usuário com matrícula
-      const user = users.find(u => u.name === userName);
-      if (user && user.matricula) {
-        setSelectedUser(user);
-        setShowMatriculaVerification(true);
-        setIsMatriculaVerified(false);
-      } else {
-        // Usuário sem matrícula, permitir acesso direto
-        setIsMatriculaVerified(true);
-        setShowMatriculaVerification(false);
-      }
+    // Buscar usuário com matrícula
+    const user = users.find(u => u.name === userName);
+    if (user && user.matricula) {
+      setSelectedUser(user);
+      setShowMatriculaVerification(true);
+      setIsMatriculaVerified(false);
     } else {
-      // Usuário customizado, não precisa de verificação
+      // Usuário sem matrícula, permitir acesso direto
       setIsMatriculaVerified(true);
       setShowMatriculaVerification(false);
     }
+  };
+
+  const handleVisitorFlowStart = () => {
+    setShowVisitorFlow(true);
+  };
+
+  const handleVisitorFlowCancel = () => {
+    setShowVisitorFlow(false);
   };
 
   const handleMatriculaVerificationSuccess = () => {
@@ -184,11 +187,11 @@ const PublicAccess = () => {
       return;
     }
 
-    const userName = selectedName === 'outros' ? customName : selectedName;
+    const userName = selectedName;
     if (!userName) {
       toast({
         title: "Erro", 
-        description: "Por favor, selecione ou digite um nome.",
+        description: "Por favor, selecione um nome.",
         variant: "destructive"
       });
       return;
@@ -217,11 +220,9 @@ const PublicAccess = () => {
     try {
       // Try to find user ID if it's a registered user
       let userId = null;
-      if (selectedName !== 'outros') {
-        const selectedUserData = users.find(user => user.name === userName);
-        if (selectedUserData) {
-          userId = selectedUserData.id;
-        }
+      const selectedUserData = users.find(user => user.name === userName);
+      if (selectedUserData) {
+        userId = selectedUserData.id;
       }
 
       // Check if this user already registered this meal today
@@ -271,7 +272,6 @@ const PublicAccess = () => {
       setSelectedGroup(null);
       setSelectedGroupName('');
       setSelectedName('');
-      setCustomName('');
       setSearchTerm('');
       setShowMatriculaVerification(false);
       setIsMatriculaVerified(false);
@@ -287,6 +287,21 @@ const PublicAccess = () => {
       setLoading(false);
     }
   };
+
+  // Show visitor flow if active
+  if (showVisitorFlow) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <VisitorFlow
+            onCancel={handleVisitorFlowCancel}
+            currentTime={currentTime}
+            systemSettings={systemSettings}
+          />
+        </div>
+      </div>
+    );
+  }
 
   // Show matricula verification if needed
   if (showMatriculaVerification && selectedUser?.matricula) {
@@ -329,6 +344,31 @@ const PublicAccess = () => {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Opção Visitante no topo */}
+        <div className="mb-8">
+          <Card className="shadow-xl border-0 bg-gradient-to-r from-purple-500 to-purple-600 text-white overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="bg-white/20 p-3 rounded-full">
+                    <Users className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">É VISITANTE?</h3>
+                    <p className="text-purple-100">Clique aqui para registro de visitantes</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleVisitorFlowStart}
+                  className="bg-white text-purple-600 hover:bg-purple-50 font-bold px-8 py-3 text-lg"
+                >
+                  VISITANTE
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Processo de 3 Passos Muito Visual */}
@@ -406,45 +446,13 @@ const PublicAccess = () => {
                         </div>
                       </Button>
                     ))}
-                  
-                  {/* Opção "Outros" */}
-                  <Button
-                    onClick={() => handleNameSelect('outros')}
-                    className={`h-14 text-lg font-semibold justify-start border-t-4 transition-all duration-200 ${
-                      selectedName === 'outros'
-                        ? 'bg-yellow-500 hover:bg-yellow-600 text-white scale-105 shadow-lg'
-                        : 'bg-white border-2 border-yellow-200 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 w-full">
-                      <div className={`w-3 h-3 rounded-full ${
-                        selectedName === 'outros' ? 'bg-white' : 'bg-yellow-500'
-                      }`}></div>
-                      <span className="flex-1 text-left font-bold">NOME NÃO ESTÁ NA LISTA</span>
-                      {selectedName === 'outros' && (
-                        <CheckCircle className="h-5 w-5" />
-                      )}
-                    </div>
-                  </Button>
                 </div>
-
-                {/* Campo para nome customizado */}
-                {selectedName === 'outros' && (
-                  <div className="mt-6 animate-fade-in">
-                    <Input
-                      placeholder="Digite seu nome completo aqui..."
-                      value={customName}
-                      onChange={(e) => setCustomName(e.target.value)}
-                      className="h-16 text-xl border-4 border-yellow-200 hover:border-yellow-300 transition-all duration-200 bg-yellow-50 rounded-2xl"
-                    />
-                  </div>
-                )}
               </CardContent>
             </Card>
           )}
 
           {/* PASSO 3: Escolher Refeição */}
-          {selectedGroup && (selectedName || (selectedName === 'outros' && customName)) && isMatriculaVerified && (
+          {selectedGroup && selectedName && isMatriculaVerified && (
             <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
               <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white py-8">
                 <div className="flex items-center gap-4">
