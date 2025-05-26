@@ -6,23 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Users, 
-  LogOut, 
-  Plus, 
-  BarChart3, 
-  Calendar,
-  Coffee,
-  Utensils,
-  Building2,
-  FileText,
-  Loader2,
-  Settings,
-  UserCog,
-  Shield,
-  Activity,
-  TrendingUp
-} from 'lucide-react';
+import { Users, LogOut, Plus, BarChart3, Calendar, Coffee, Utensils, Building2, FileText, Loader2, Settings, UserCog, Shield, Activity, TrendingUp } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, MealRecord, GroupType } from '@/types/database.types';
@@ -32,7 +16,6 @@ import PasswordConfirmDialog from './PasswordConfirmDialog';
 import MealRecordsTable from './MealRecordsTable';
 import AdminUsersManagement from './AdminUsersManagement';
 import UsersList from './UsersList';
-
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [newUserName, setNewUserName] = useState('');
@@ -45,7 +28,7 @@ const AdminDashboard = () => {
   // Edit user states
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  
+
   // Password confirmation states
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
@@ -68,7 +51,6 @@ const AdminDashboard = () => {
       navigate('/admin');
       return;
     }
-
     try {
       const session = JSON.parse(adminSession);
       // Verificar se a sessão não expirou (24 horas)
@@ -93,11 +75,10 @@ const AdminDashboard = () => {
   // Fetch users from Supabase
   const fetchUsers = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .order('name');
-
+    const {
+      data,
+      error
+    } = await supabase.from('users').select('*').order('name');
     if (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -114,11 +95,12 @@ const AdminDashboard = () => {
   // Fetch meal records from Supabase
   const fetchMealRecords = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('meal_records')
-      .select('*')
-      .order('created_at', { ascending: false });
-
+    const {
+      data,
+      error
+    } = await supabase.from('meal_records').select('*').order('created_at', {
+      ascending: false
+    });
     if (error) {
       console.error('Error fetching meal records:', error);
       toast({
@@ -136,44 +118,34 @@ const AdminDashboard = () => {
   const fetchTodayStats = async () => {
     setStatsLoading(true);
     const today = new Date().toISOString().split('T')[0];
-    
     try {
       // Breakfast count
-      const { data: breakfastData, error: breakfastError } = await supabase
-        .from('meal_records')
-        .select('id')
-        .eq('meal_date', today)
-        .eq('meal_type', 'breakfast');
-        
+      const {
+        data: breakfastData,
+        error: breakfastError
+      } = await supabase.from('meal_records').select('id').eq('meal_date', today).eq('meal_type', 'breakfast');
       if (breakfastError) throw breakfastError;
-      
+
       // Lunch count
-      const { data: lunchData, error: lunchError } = await supabase
-        .from('meal_records')
-        .select('id')
-        .eq('meal_date', today)
-        .eq('meal_type', 'lunch');
-        
+      const {
+        data: lunchData,
+        error: lunchError
+      } = await supabase.from('meal_records').select('id').eq('meal_date', today).eq('meal_type', 'lunch');
       if (lunchError) throw lunchError;
-      
+
       // Operacao count
-      const { data: operacaoData, error: operacaoError } = await supabase
-        .from('meal_records')
-        .select('id')
-        .eq('meal_date', today)
-        .eq('group_type', 'operacao');
-        
+      const {
+        data: operacaoData,
+        error: operacaoError
+      } = await supabase.from('meal_records').select('id').eq('meal_date', today).eq('group_type', 'operacao');
       if (operacaoError) throw operacaoError;
-      
+
       // Projetos count
-      const { data: projetosData, error: projetosError } = await supabase
-        .from('meal_records')
-        .select('id')
-        .eq('meal_date', today)
-        .eq('group_type', 'projetos');
-        
+      const {
+        data: projetosData,
+        error: projetosError
+      } = await supabase.from('meal_records').select('id').eq('meal_date', today).eq('group_type', 'projetos');
       if (projetosError) throw projetosError;
-      
       setBreakfastToday(breakfastData.length);
       setLunchToday(lunchData.length);
       setOperacaoToday(operacaoData.length);
@@ -196,16 +168,14 @@ const AdminDashboard = () => {
     fetchMealRecords();
     fetchTodayStats();
   }, []);
-
   const handleLogout = () => {
     localStorage.removeItem('admin_session');
     toast({
       title: "Logout realizado",
-      description: "Até logo!",
+      description: "Até logo!"
     });
     navigate('/admin');
   };
-
   const handleAddUser = async () => {
     if (!newUserName || !newUserGroup) {
       toast({
@@ -215,18 +185,12 @@ const AdminDashboard = () => {
       });
       return;
     }
-
     setLoading(true);
-    
     try {
       // Check if user already exists
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('name', newUserName)
-        .eq('group_type', newUserGroup)
-        .maybeSingle();
-        
+      const {
+        data: existingUser
+      } = await supabase.from('users').select('id').eq('name', newUserName).eq('group_type', newUserGroup).maybeSingle();
       if (existingUser) {
         toast({
           title: "Usuário já existe",
@@ -238,18 +202,16 @@ const AdminDashboard = () => {
       }
 
       // Add new user
-      const { error } = await supabase
-        .from('users')
-        .insert({
-          name: newUserName,
-          group_type: newUserGroup
-        });
-
+      const {
+        error
+      } = await supabase.from('users').insert({
+        name: newUserName,
+        group_type: newUserGroup
+      });
       if (error) throw error;
-
       toast({
         title: "Usuário adicionado",
-        description: `${newUserName} foi adicionado com sucesso.`,
+        description: `${newUserName} foi adicionado com sucesso.`
       });
 
       // Reset form and refresh users
@@ -267,29 +229,22 @@ const AdminDashboard = () => {
       setLoading(false);
     }
   };
-
   const confirmDeleteUser = (user: User) => {
     setUserToDelete(user);
     setShowPasswordDialog(true);
   };
-
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
-
     setLoading(true);
-    
     try {
       // Delete user
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userToDelete.id);
-
+      const {
+        error
+      } = await supabase.from('users').delete().eq('id', userToDelete.id);
       if (error) throw error;
-
       toast({
         title: "Usuário removido",
-        description: "Usuário removido com sucesso.",
+        description: "Usuário removido com sucesso."
       });
 
       // Refresh users
@@ -306,14 +261,11 @@ const AdminDashboard = () => {
       setUserToDelete(null);
     }
   };
-
   const openEditDialog = (user: User) => {
     setEditingUser(user);
     setShowEditDialog(true);
   };
-
-  return (
-    <div className="min-h-screen bg-slate-50">
+  return <div className="min-h-screen bg-slate-50">
       {/* Professional Header */}
       <div className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -335,11 +287,7 @@ const AdminDashboard = () => {
                 <Activity className="h-4 w-4 text-slate-600" />
                 <span className="text-sm font-medium text-slate-700">Sistema Ativo</span>
               </div>
-              <Button 
-                onClick={handleLogout} 
-                variant="outline" 
-                className="flex items-center gap-2 border-slate-300 hover:bg-slate-100"
-              >
+              <Button onClick={handleLogout} variant="outline" className="flex items-center gap-2 border-slate-300 hover:bg-slate-100">
                 <LogOut className="h-4 w-4" />
                 Sair
               </Button>
@@ -356,14 +304,10 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-orange-700 mb-1">Café da Manhã Hoje</p>
-                  {statsLoading ? (
-                    <Loader2 className="h-6 w-6 text-orange-600 animate-spin" />
-                  ) : (
-                    <div className="flex items-baseline gap-2">
+                  {statsLoading ? <Loader2 className="h-6 w-6 text-orange-600 animate-spin" /> : <div className="flex items-baseline gap-2">
                       <p className="text-3xl font-bold text-orange-800">{breakfastToday}</p>
                       <span className="text-sm text-orange-600">registros</span>
-                    </div>
-                  )}
+                    </div>}
                 </div>
                 <div className="p-3 bg-orange-500 rounded-xl">
                   <Coffee className="h-8 w-8 text-white" />
@@ -377,14 +321,10 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-700 mb-1">Almoço Hoje</p>
-                  {statsLoading ? (
-                    <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
-                  ) : (
-                    <div className="flex items-baseline gap-2">
+                  {statsLoading ? <Loader2 className="h-6 w-6 text-blue-600 animate-spin" /> : <div className="flex items-baseline gap-2">
                       <p className="text-3xl font-bold text-blue-800">{lunchToday}</p>
                       <span className="text-sm text-blue-600">registros</span>
-                    </div>
-                  )}
+                    </div>}
                 </div>
                 <div className="p-3 bg-blue-500 rounded-xl">
                   <Utensils className="h-8 w-8 text-white" />
@@ -397,17 +337,13 @@ const AdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-emerald-700 mb-1">Equipe Operação</p>
-                  {statsLoading ? (
-                    <Loader2 className="h-6 w-6 text-emerald-600 animate-spin" />
-                  ) : (
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-3xl font-bold text-emerald-800">{operacaoToday}</p>
-                      <span className="text-sm text-emerald-600">hoje</span>
-                    </div>
-                  )}
+                  <p className="text-sm font-medium mb-1 text-red-800">Equipe Operação</p>
+                  {statsLoading ? <Loader2 className="h-6 w-6 text-emerald-600 animate-spin" /> : <div className="flex items-baseline gap-2">
+                      <p className="text-3xl font-bold text-red-800">{operacaoToday}</p>
+                      <span className="text-sm text-red-800">hoje</span>
+                    </div>}
                 </div>
-                <div className="p-3 bg-emerald-500 rounded-xl">
+                <div className="p-3 rounded-xl bg-red-500">
                   <Building2 className="h-8 w-8 text-white" />
                 </div>
               </div>
@@ -418,17 +354,13 @@ const AdminDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-purple-700 mb-1">Equipe Projetos</p>
-                  {statsLoading ? (
-                    <Loader2 className="h-6 w-6 text-purple-600 animate-spin" />
-                  ) : (
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-3xl font-bold text-purple-800">{projetosToday}</p>
-                      <span className="text-sm text-purple-600">hoje</span>
-                    </div>
-                  )}
+                  <p className="text-sm font-medium mb-1 text-blue-800">Equipe Projetos</p>
+                  {statsLoading ? <Loader2 className="h-6 w-6 text-purple-600 animate-spin" /> : <div className="flex items-baseline gap-2">
+                      <p className="text-3xl font-bold text-blue-700">{projetosToday}</p>
+                      <span className="text-sm text-blue-700">hoje</span>
+                    </div>}
                 </div>
-                <div className="p-3 bg-purple-500 rounded-xl">
+                <div className="p-3 rounded-xl bg-blue-800">
                   <Users className="h-8 w-8 text-white" />
                 </div>
               </div>
@@ -440,38 +372,23 @@ const AdminDashboard = () => {
         <Tabs defaultValue="users" className="space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2">
             <TabsList className="grid w-full grid-cols-5 bg-transparent gap-1">
-              <TabsTrigger 
-                value="users" 
-                className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3"
-              >
+              <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Usuários</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="records" 
-                className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3"
-              >
+              <TabsTrigger value="records" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <Calendar className="h-4 w-4" />
                 <span className="hidden sm:inline">Registros</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="settings" 
-                className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3"
-              >
+              <TabsTrigger value="settings" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <Settings className="h-4 w-4" />
                 <span className="hidden sm:inline">Config.</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="admins" 
-                className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3"
-              >
+              <TabsTrigger value="admins" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <UserCog className="h-4 w-4" />
                 <span className="hidden sm:inline">Admins</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="reports" 
-                className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3"
-              >
+              <TabsTrigger value="reports" className="flex items-center gap-2 data-[state=active]:bg-slate-900 data-[state=active]:text-white rounded-lg py-3">
                 <TrendingUp className="h-4 w-4" />
                 <span className="hidden sm:inline">Relatórios</span>
               </TabsTrigger>
@@ -492,22 +409,12 @@ const AdminDashboard = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="newUserName">Nome Completo</Label>
-                    <Input
-                      id="newUserName"
-                      value={newUserName}
-                      onChange={(e) => setNewUserName(e.target.value)}
-                      placeholder="Digite o nome..."
-                      disabled={loading}
-                    />
+                    <Input id="newUserName" value={newUserName} onChange={e => setNewUserName(e.target.value)} placeholder="Digite o nome..." disabled={loading} />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="newUserGroup">Grupo</Label>
-                    <Select 
-                      value={newUserGroup} 
-                      onValueChange={(value) => setNewUserGroup(value as GroupType)}
-                      disabled={loading}
-                    >
+                    <Select value={newUserGroup} onValueChange={value => setNewUserGroup(value as GroupType)} disabled={loading}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o grupo..." />
                       </SelectTrigger>
@@ -518,40 +425,23 @@ const AdminDashboard = () => {
                     </Select>
                   </div>
 
-                  <Button 
-                    onClick={handleAddUser} 
-                    className="w-full"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
+                  <Button onClick={handleAddUser} className="w-full" disabled={loading}>
+                    {loading ? <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Adicionando...
-                      </>
-                    ) : (
-                      'Adicionar Usuário'
-                    )}
+                      </> : 'Adicionar Usuário'}
                   </Button>
                 </CardContent>
               </Card>
 
               {/* Users List */}
-              <UsersList
-                users={users}
-                loading={loading}
-                onEditUser={openEditDialog}
-                onDeleteUser={confirmDeleteUser}
-              />
+              <UsersList users={users} loading={loading} onEditUser={openEditDialog} onDeleteUser={confirmDeleteUser} />
             </div>
           </TabsContent>
 
           {/* Records Tab */}
           <TabsContent value="records">
-            <MealRecordsTable 
-              records={mealRecords}
-              loading={loading}
-              onRecordsUpdated={fetchMealRecords}
-            />
+            <MealRecordsTable records={mealRecords} loading={loading} onRecordsUpdated={fetchMealRecords} />
           </TabsContent>
 
           {/* Settings Tab */}
@@ -601,30 +491,17 @@ const AdminDashboard = () => {
         </Tabs>
 
         {/* Edit User Dialog */}
-        <EditUserDialog
-          user={editingUser}
-          isOpen={showEditDialog}
-          onClose={() => {
-            setShowEditDialog(false);
-            setEditingUser(null);
-          }}
-          onUserUpdated={fetchUsers}
-        />
+        <EditUserDialog user={editingUser} isOpen={showEditDialog} onClose={() => {
+        setShowEditDialog(false);
+        setEditingUser(null);
+      }} onUserUpdated={fetchUsers} />
 
         {/* Password Confirmation Dialog */}
-        <PasswordConfirmDialog
-          isOpen={showPasswordDialog}
-          onClose={() => {
-            setShowPasswordDialog(false);
-            setUserToDelete(null);
-          }}
-          onConfirm={handleDeleteUser}
-          title="Confirmar Exclusão"
-          message={`Tem certeza que deseja excluir o usuário ${userToDelete?.name}?`}
-        />
+        <PasswordConfirmDialog isOpen={showPasswordDialog} onClose={() => {
+        setShowPasswordDialog(false);
+        setUserToDelete(null);
+      }} onConfirm={handleDeleteUser} title="Confirmar Exclusão" message={`Tem certeza que deseja excluir o usuário ${userToDelete?.name}?`} />
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default AdminDashboard;
