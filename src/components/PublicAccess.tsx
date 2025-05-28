@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Clock, Coffee, Utensils, Search, CheckCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,17 +12,25 @@ import MatriculaVerification from './MatriculaVerification';
 import VisitorFlow from './VisitorFlow';
 
 const PublicAccess = () => {
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
+  
+  // States for employee flow
+  const [showEmployeeFlow, setShowEmployeeFlow] = useState(false);
+  const [employeeStep, setEmployeeStep] = useState<'group' | 'name' | 'meal'>('group');
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedGroupName, setSelectedGroupName] = useState<string>('');
   const [selectedName, setSelectedName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [users, setUsers] = useState<User[]>([]);
-  const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // States for matricula verification
   const [showMatriculaVerification, setShowMatriculaVerification] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isMatriculaVerified, setIsMatriculaVerified] = useState(false);
+  
+  // States for visitor flow
   const [showVisitorFlow, setShowVisitorFlow] = useState(false);
 
   // Helper function to validate user names
@@ -129,15 +138,27 @@ const PublicAccess = () => {
     return `${startTime} às ${systemSettings.lunch_deadline}`;
   };
 
-  const handleGroupSelect = (groupId: string, groupName: string) => {
-    setSelectedGroup(groupId);
-    setSelectedGroupName(groupName);
+  // Employee flow handlers
+  const handleEmployeeFlowStart = () => {
+    setShowEmployeeFlow(true);
+    setEmployeeStep('group');
+    resetEmployeeFlow();
+  };
+
+  const resetEmployeeFlow = () => {
+    setSelectedGroup(null);
+    setSelectedGroupName('');
     setSelectedName('');
     setSearchTerm('');
     setShowMatriculaVerification(false);
     setIsMatriculaVerified(false);
     setSelectedUser(null);
-    setShowVisitorFlow(false);
+  };
+
+  const handleGroupSelect = (groupId: string, groupName: string) => {
+    setSelectedGroup(groupId);
+    setSelectedGroupName(groupName);
+    setEmployeeStep('name');
   };
 
   const handleNameSelect = (userName: string) => {
@@ -153,20 +174,14 @@ const PublicAccess = () => {
       // Usuário sem matrícula, permitir acesso direto
       setIsMatriculaVerified(true);
       setShowMatriculaVerification(false);
+      setEmployeeStep('meal');
     }
-  };
-
-  const handleVisitorFlowStart = () => {
-    setShowVisitorFlow(true);
-  };
-
-  const handleVisitorFlowCancel = () => {
-    setShowVisitorFlow(false);
   };
 
   const handleMatriculaVerificationSuccess = () => {
     setIsMatriculaVerified(true);
     setShowMatriculaVerification(false);
+    setEmployeeStep('meal');
   };
 
   const handleMatriculaVerificationCancel = () => {
@@ -174,6 +189,16 @@ const PublicAccess = () => {
     setSelectedName('');
     setSelectedUser(null);
     setIsMatriculaVerified(false);
+    setEmployeeStep('name');
+  };
+
+  // Visitor flow handlers
+  const handleVisitorFlowStart = () => {
+    setShowVisitorFlow(true);
+  };
+
+  const handleVisitorFlowCancel = () => {
+    setShowVisitorFlow(false);
   };
 
   const handleMealRegistration = async (mealType: MealType) => {
@@ -268,13 +293,8 @@ const PublicAccess = () => {
       });
 
       // Reset form
-      setSelectedGroup(null);
-      setSelectedGroupName('');
-      setSelectedName('');
-      setSearchTerm('');
-      setShowMatriculaVerification(false);
-      setIsMatriculaVerified(false);
-      setSelectedUser(null);
+      setShowEmployeeFlow(false);
+      resetEmployeeFlow();
     } catch (error: any) {
       console.error('Error registering meal:', error);
       toast({
@@ -318,6 +338,210 @@ const PublicAccess = () => {
     );
   }
 
+  // Show employee flow if active
+  if (showEmployeeFlow) {
+    if (employeeStep === 'group') {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
+          <div className="max-w-4xl mx-auto">
+            <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
+              <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-8">
+                <div className="flex items-center gap-4">
+                  <div className="bg-white/20 p-4 rounded-full">
+                    <Utensils className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold">FUNCIONÁRIO</CardTitle>
+                    <p className="text-blue-100 text-lg">Selecione seu setor</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-6 text-center">
+                    Onde você trabalha?
+                  </h3>
+                  
+                  <DynamicGroupSelector
+                    selectedGroup={selectedGroup}
+                    onGroupSelect={handleGroupSelect}
+                  />
+
+                  <div className="flex justify-center mt-8">
+                    <Button onClick={() => setShowEmployeeFlow(false)} variant="outline" className="px-8 py-3 text-gray-600 hover:text-gray-800">
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    if (employeeStep === 'name') {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
+          <div className="max-w-4xl mx-auto">
+            <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
+              <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white py-8">
+                <div className="flex items-center gap-4">
+                  <div className="bg-white/20 p-4 rounded-full">
+                    <Users className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold">ENCONTRE SEU NOME</CardTitle>
+                    <p className="text-green-100 text-lg">Setor: {selectedGroupName}</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8 space-y-6">
+                {/* Campo de busca */}
+                <div className="relative">
+                  <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 text-slate-400 h-6 w-6 z-10" />
+                  <Input
+                    placeholder="Digite seu nome aqui..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-16 pl-16 text-xl border-4 border-slate-200 hover:border-green-300 transition-all duration-200 bg-white/50 rounded-2xl"
+                  />
+                </div>
+                
+                {/* Lista de nomes */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-80 overflow-y-auto">
+                  {filteredUsers
+                    .filter(user => isValidUserName(user.name))
+                    .map((user) => (
+                      <Button
+                        key={user.id}
+                        onClick={() => handleNameSelect(user.name)}
+                        className={`h-16 text-lg font-semibold justify-start transition-all duration-200 rounded-xl ${
+                          selectedName === user.name
+                            ? 'bg-green-500 hover:bg-green-600 text-white scale-105 shadow-lg'
+                            : 'bg-white border-2 border-slate-200 text-slate-700 hover:bg-green-50 hover:border-green-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-4 w-full">
+                          <div className={`w-4 h-4 rounded-full ${
+                            selectedName === user.name ? 'bg-white' : 'bg-green-500'
+                          }`}></div>
+                          <span className="flex-1 text-left">{user.name}</span>
+                          {selectedName === user.name && (
+                            <CheckCircle className="h-6 w-6" />
+                          )}
+                        </div>
+                      </Button>
+                    ))}
+                </div>
+
+                <div className="flex gap-4 justify-center mt-8">
+                  <Button onClick={() => setEmployeeStep('group')} variant="outline" className="px-8 py-3 text-gray-600 hover:text-gray-800">
+                    Voltar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    if (employeeStep === 'meal' && isMatriculaVerified) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
+          <div className="max-w-4xl mx-auto">
+            <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
+              <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-8">
+                <div className="flex items-center gap-4">
+                  <div className="bg-white/20 p-4 rounded-full">
+                    <Utensils className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold">ESCOLHA SUA REFEIÇÃO</CardTitle>
+                    <p className="text-orange-100 text-lg">Olá, {selectedName}!</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  <div className="text-center mb-6">
+                    <p className="text-lg text-gray-600">
+                      Setor: <span className="font-bold">{selectedGroupName}</span>
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Botão Café da Manhã */}
+                    <Button
+                      onClick={() => handleMealRegistration('breakfast')}
+                      disabled={!canRegisterBreakfast || loading}
+                      className={`h-32 flex flex-col gap-3 justify-center text-left transition-all duration-300 rounded-3xl ${
+                        canRegisterBreakfast 
+                          ? 'bg-gradient-to-br from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white shadow-xl hover:shadow-2xl hover:scale-105' 
+                          : 'bg-slate-200 cursor-not-allowed opacity-60 text-slate-500'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4 w-full">
+                        <div className={`p-4 rounded-2xl ${canRegisterBreakfast ? 'bg-white/20' : 'bg-slate-300'}`}>
+                          <Coffee className="h-12 w-12" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-2xl font-black">CAFÉ DA MANHÃ</div>
+                          <div className="text-lg opacity-90">{getBreakfastTimeRange()}</div>
+                          {canRegisterBreakfast && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                              <span className="text-sm font-semibold">DISPONÍVEL AGORA</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Button>
+
+                    {/* Botão Almoço */}
+                    <Button
+                      onClick={() => handleMealRegistration('lunch')}
+                      disabled={!canRegisterLunch || loading}
+                      className={`h-32 flex flex-col gap-3 justify-center text-left transition-all duration-300 rounded-3xl ${
+                        canRegisterLunch 
+                          ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl hover:scale-105' 
+                          : 'bg-slate-200 cursor-not-allowed opacity-60 text-slate-500'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4 w-full">
+                        <div className={`p-4 rounded-2xl ${canRegisterLunch ? 'bg-white/20' : 'bg-slate-300'}`}>
+                          <Utensils className="h-12 w-12" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-2xl font-black">ALMOÇO</div>
+                          <div className="text-lg opacity-90">{getLunchTimeRange()}</div>
+                          {canRegisterLunch && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                              <span className="text-sm font-semibold">DISPONÍVEL AGORA</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Button>
+                  </div>
+
+                  <div className="flex justify-center mt-8">
+                    <Button onClick={() => setEmployeeStep('name')} variant="outline" className="px-8 py-3 text-gray-600 hover:text-gray-800" disabled={loading}>
+                      Voltar
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // Main screen - choice between visitor and employee
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
       <div className="max-w-5xl mx-auto">
@@ -370,7 +594,7 @@ const PublicAccess = () => {
           </Card>
 
           {/* Opção Funcionário */}
-          <Card className="shadow-2xl border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden hover:scale-105 transition-all duration-300">
+          <Card className="shadow-2xl border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer" onClick={handleEmployeeFlowStart}>
             <CardContent className="p-12 text-center">
               <div className="bg-white/20 p-8 rounded-full mx-auto mb-8 w-fit">
                 <Utensils className="h-16 w-16" />
@@ -379,160 +603,11 @@ const PublicAccess = () => {
               <p className="text-2xl text-blue-100 mb-8">
                 Trabalho na empresa
               </p>
-              <p className="text-xl text-blue-200">
-                Continue abaixo para escolher seu grupo
-              </p>
+              <Button className="bg-white text-blue-600 hover:bg-blue-50 font-bold px-12 py-6 text-2xl h-auto rounded-2xl">
+                CLIQUE AQUI
+              </Button>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Fluxo do Funcionário - Mais Simples */}
-        <div className="space-y-10">
-          
-          {/* PASSO 1: Escolher Grupo - Simplificado */}
-          <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-10">
-              <div className="text-center">
-                <div className="bg-white/20 p-6 rounded-full mx-auto mb-6 w-fit">
-                  <span className="text-4xl font-black">1</span>
-                </div>
-                <CardTitle className="text-3xl font-bold mb-2">ESCOLHA SEU SETOR</CardTitle>
-                <p className="text-blue-100 text-xl">Onde você trabalha?</p>
-              </div>
-            </CardHeader>
-            <CardContent className="p-10">
-              <DynamicGroupSelector
-                selectedGroup={selectedGroup}
-                onGroupSelect={handleGroupSelect}
-              />
-            </CardContent>
-          </Card>
-
-          {/* PASSO 2: Escolher Nome - Mais Visual */}
-          {selectedGroup && (
-            <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
-              <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white py-10">
-                <div className="text-center">
-                  <div className="bg-white/20 p-6 rounded-full mx-auto mb-6 w-fit">
-                    <span className="text-4xl font-black">2</span>
-                  </div>
-                  <CardTitle className="text-3xl font-bold mb-2">ENCONTRE SEU NOME</CardTitle>
-                  <p className="text-green-100 text-xl">Digite ou procure na lista</p>
-                </div>
-              </CardHeader>
-              <CardContent className="p-10 space-y-8">
-                {/* Campo de busca MUITO maior */}
-                <div className="relative">
-                  <Search className="absolute left-8 top-1/2 transform -translate-y-1/2 text-slate-400 h-8 w-8 z-10" />
-                  <Input
-                    placeholder="Digite seu nome aqui..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="h-20 pl-20 text-2xl border-4 border-slate-200 hover:border-green-300 transition-all duration-200 bg-white/50 rounded-2xl"
-                  />
-                </div>
-                
-                {/* Lista de nomes com cards maiores */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-80 overflow-y-auto">
-                  {filteredUsers
-                    .filter(user => isValidUserName(user.name))
-                    .map((user) => (
-                      <Button
-                        key={user.id}
-                        onClick={() => handleNameSelect(user.name)}
-                        className={`h-16 text-xl font-semibold justify-start transition-all duration-200 rounded-xl ${
-                          selectedName === user.name
-                            ? 'bg-green-500 hover:bg-green-600 text-white scale-105 shadow-lg'
-                            : 'bg-white border-2 border-slate-200 text-slate-700 hover:bg-green-50 hover:border-green-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-4 w-full">
-                          <div className={`w-4 h-4 rounded-full ${
-                            selectedName === user.name ? 'bg-white' : 'bg-green-500'
-                          }`}></div>
-                          <span className="flex-1 text-left">{user.name}</span>
-                          {selectedName === user.name && (
-                            <CheckCircle className="h-6 w-6" />
-                          )}
-                        </div>
-                      </Button>
-                    ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* PASSO 3: Escolher Refeição - Mais Visual */}
-          {selectedGroup && selectedName && isMatriculaVerified && (
-            <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
-              <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-10">
-                <div className="text-center">
-                  <div className="bg-white/20 p-6 rounded-full mx-auto mb-6 w-fit">
-                    <span className="text-4xl font-black">3</span>
-                  </div>
-                  <CardTitle className="text-3xl font-bold mb-2">ESCOLHA SUA REFEIÇÃO</CardTitle>
-                  <p className="text-orange-100 text-xl">Clique na refeição desejada</p>
-                </div>
-              </CardHeader>
-              <CardContent className="p-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {/* Botão Café da Manhã MAIOR */}
-                  <Button
-                    onClick={() => handleMealRegistration('breakfast')}
-                    disabled={!canRegisterBreakfast || loading}
-                    className={`h-40 flex flex-col gap-4 justify-center text-left transition-all duration-300 rounded-3xl ${
-                      canRegisterBreakfast 
-                        ? 'bg-gradient-to-br from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white shadow-xl hover:shadow-2xl hover:scale-105' 
-                        : 'bg-slate-200 cursor-not-allowed opacity-60 text-slate-500'
-                    }`}
-                  >
-                    <div className="flex items-center gap-6 w-full">
-                      <div className={`p-6 rounded-3xl ${canRegisterBreakfast ? 'bg-white/20' : 'bg-slate-300'}`}>
-                        <Coffee className="h-16 w-16" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-3xl font-black">CAFÉ DA MANHÃ</div>
-                        <div className="text-xl opacity-90">{getBreakfastTimeRange()}</div>
-                        {canRegisterBreakfast && (
-                          <div className="flex items-center gap-3 mt-3">
-                            <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
-                            <span className="text-lg font-semibold">DISPONÍVEL AGORA</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Button>
-
-                  {/* Botão Almoço MAIOR */}
-                  <Button
-                    onClick={() => handleMealRegistration('lunch')}
-                    disabled={!canRegisterLunch || loading}
-                    className={`h-40 flex flex-col gap-4 justify-center text-left transition-all duration-300 rounded-3xl ${
-                      canRegisterLunch 
-                        ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl hover:scale-105' 
-                        : 'bg-slate-200 cursor-not-allowed opacity-60 text-slate-500'
-                    }`}
-                  >
-                    <div className="flex items-center gap-6 w-full">
-                      <div className={`p-6 rounded-3xl ${canRegisterLunch ? 'bg-white/20' : 'bg-slate-300'}`}>
-                        <Utensils className="h-16 w-16" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-3xl font-black">ALMOÇO</div>
-                        <div className="text-xl opacity-90">{getLunchTimeRange()}</div>
-                        {canRegisterLunch && (
-                          <div className="flex items-center gap-3 mt-3">
-                            <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
-                            <span className="text-lg font-semibold">DISPONÍVEL AGORA</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         {/* Admin Access - Discreto */}
