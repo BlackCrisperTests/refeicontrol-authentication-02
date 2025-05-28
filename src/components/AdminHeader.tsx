@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, Activity, KeyRound, User } from 'lucide-react';
+import { LogOut, Activity, KeyRound, ChevronDown } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdminSession } from '@/hooks/useAdminSession';
@@ -70,7 +71,7 @@ const AdminHeader = ({ onLogout }: AdminHeaderProps) => {
       const { error: updateError } = await supabase
         .from('admin_users')
         .update({ 
-          password: newPassword, // Em produção, use bcrypt hash
+          password_hash: newPassword, // Em produção, use bcrypt hash
           updated_at: new Date().toISOString()
         })
         .eq('username', adminSession?.username);
@@ -141,95 +142,101 @@ const AdminHeader = ({ onLogout }: AdminHeaderProps) => {
               <span className="text-sm font-medium text-slate-700">Sistema Ativo</span>
             </div>
 
-            {/* User Info */}
+            {/* User Info with Dropdown */}
             {adminSession && (
-              <div className="flex items-center gap-3 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-slate-700 text-white text-sm">
-                    {getUserInitials(adminSession.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-slate-900">{adminSession.name}</span>
-                  <span className="text-xs text-slate-500">@{adminSession.username}</span>
-                </div>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="flex items-center gap-3 px-3 py-2 h-auto hover:bg-slate-50 rounded-lg border border-slate-200"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-slate-700 text-white text-sm">
+                        {getUserInitials(adminSession.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col text-left">
+                      <span className="text-sm font-medium text-slate-900">{adminSession.name}</span>
+                      <span className="text-xs text-slate-500">@{adminSession.username}</span>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setShowPasswordDialog(true)}>
+                    <KeyRound className="h-4 w-4 mr-2" />
+                    Trocar Senha
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onLogout} className="text-red-600">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-
-            {/* Change Password Dialog */}
-            <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <KeyRound className="h-4 w-4" />
-                  <span className="hidden sm:inline">Trocar Senha</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <KeyRound className="h-5 w-5" />
-                    Alterar Senha
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div>
-                    <Label htmlFor="current-password">Senha Atual</Label>
-                    <Input
-                      id="current-password"
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Digite sua senha atual"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="new-password">Nova Senha</Label>
-                    <Input
-                      id="new-password"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Digite a nova senha"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirme a nova senha"
-                    />
-                  </div>
-                  <div className="flex gap-2 pt-4">
-                    <Button 
-                      onClick={handleChangePassword} 
-                      disabled={loading}
-                      className="flex-1"
-                    >
-                      {loading ? "Alterando..." : "Alterar Senha"}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowPasswordDialog(false)}
-                      className="flex-1"
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {/* Logout Button */}
-            <Button onClick={onLogout} variant="outline" className="flex items-center gap-2 border-slate-300 hover:bg-slate-100">
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Sair</span>
-            </Button>
           </div>
         </div>
       </div>
+
+      {/* Change Password Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Alterar Senha
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <Label htmlFor="current-password">Senha Atual</Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Digite sua senha atual"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-password">Nova Senha</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Digite a nova senha"
+              />
+            </div>
+            <div>
+              <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirme a nova senha"
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={handleChangePassword} 
+                disabled={loading}
+                className="flex-1"
+              >
+                {loading ? "Alterando..." : "Alterar Senha"}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowPasswordDialog(false)}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
