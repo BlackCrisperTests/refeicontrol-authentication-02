@@ -24,5 +24,10 @@ export const useAdminSession = () => {
     }
   }, []);
 
-  return adminSession;
+  const logout = () => {
+    localStorage.removeItem('admin_session');
+    setAdminSession(null);
+  };
+
+  return { adminSession, logout };
 };

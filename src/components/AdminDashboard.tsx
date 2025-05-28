@@ -18,6 +18,7 @@ import AdminUsersManagement from './AdminUsersManagement';
 import UsersList from './UsersList';
 import ReportsSection from './ReportsSection';
 import GroupsManagement from './GroupsManagement';
+import AdminHeader from './AdminHeader';
 import { useGroups } from '@/hooks/useGroups';
 
 const AdminDashboard = () => {
@@ -370,42 +371,7 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Professional Header */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-6">
-              {/* Logo Mizu */}
-              <div className="flex items-center">
-                <img 
-                  src="/lovable-uploads/d38ceb0f-90a2-4150-bb46-ea05261ceb60.png" 
-                  alt="Mizu Cimentos" 
-                  className="h-12 w-auto"
-                />
-              </div>
-              
-              {/* RefeiControl logo com tamanho aumentado */}
-              <div className="flex items-center">
-                <img 
-                  src="/lovable-uploads/56a93187-288c-427c-8201-6fe4029f0a83.png" 
-                  alt="RefeiControl - Painel Administrativo" 
-                  className="h-20 w-auto"
-                />
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg">
-                <Activity className="h-4 w-4 text-slate-600" />
-                <span className="text-sm font-medium text-slate-700">Sistema Ativo</span>
-              </div>
-              <Button onClick={handleLogout} variant="outline" className="flex items-center gap-2 border-slate-300 hover:bg-slate-100">
-                <LogOut className="h-4 w-4" />
-                Sair
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AdminHeader onLogout={handleLogout} />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Enhanced Stats Cards */}
