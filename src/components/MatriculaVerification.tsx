@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, X, CheckCircle, Backspace } from 'lucide-react';
+import { ShieldCheck, X, CheckCircle, Delete } from 'lucide-react';
 
 interface MatriculaVerificationProps {
   correctMatricula: string;
@@ -155,7 +154,7 @@ const MatriculaVerification: React.FC<MatriculaVerificationProps> = ({
               onClick={handleBackspace}
               className="h-16 font-bold bg-orange-50 border-2 border-orange-300 text-orange-600 hover:bg-orange-100 hover:border-orange-400 transition-all duration-200"
             >
-              <Backspace className="h-6 w-6" />
+              <Delete className="h-6 w-6" />
             </Button>
           </div>
 
