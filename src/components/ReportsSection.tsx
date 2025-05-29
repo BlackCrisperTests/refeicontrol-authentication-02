@@ -15,7 +15,7 @@ const ReportsSection = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const [filters, setFilters] = useState<ReportFilters>({});
   const [users, setUsers] = useState<Array<{ name: string; group_type: GroupType }>>([]);
-  const adminSession = useAdminSession();
+  const { adminSession } = useAdminSession();
   const { groups } = useGroups();
 
   // Fetch users for filter dropdown
