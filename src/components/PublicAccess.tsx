@@ -10,6 +10,7 @@ import DynamicGroupSelector from './DynamicGroupSelector';
 import MatriculaVerification from './MatriculaVerification';
 import VisitorFlow from './VisitorFlow';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { useUsersWithCache } from '@/hooks/useUsersWithCache';
 import { MealRecordService } from '@/services/mealRecordService';
 
 const PublicAccess = () => {
@@ -27,7 +28,10 @@ const PublicAccess = () => {
   const [selectedGroupType, setSelectedGroupType] = useState<GroupType | null>(null);
   const [selectedName, setSelectedName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [users, setUsers] = useState<User[]>([]);
+  
+  // Hook para usuários com cache offline
+  const { users, loading: usersLoading, hasCachedData } = useUsersWithCache(selectedGroup || undefined);
+  
   const [loading, setLoading] = useState(false);
   
   // States for matricula verification
@@ -407,6 +411,18 @@ const PublicAccess = () => {
                   </div>
                 )}
 
+                {/* Indicador de cache offline para usuários */}
+                {!isOnline && hasCachedData && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-blue-800">
+                      <Users className="h-4 w-4" />
+                      <span className="text-sm">
+                        Modo offline - Usuários carregados do cache local
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-6">
                   <h3 className="text-xl font-semibold text-gray-800 mb-6 text-center">
                     Onde você trabalha?
@@ -473,6 +489,18 @@ const PublicAccess = () => {
                   </div>
                 )}
 
+                {/* Indicador de cache offline para usuários */}
+                {!isOnline && hasCachedData && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-blue-800">
+                      <Users className="h-4 w-4" />
+                      <span className="text-sm">
+                        Usuários carregados do cache local (modo offline)
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Campo de busca */}
                 <div className="relative">
                   <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 text-slate-400 h-6 w-6 z-10" />
@@ -484,32 +512,54 @@ const PublicAccess = () => {
                   />
                 </div>
                 
-                {/* Lista de nomes */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-80 overflow-y-auto">
-                  {filteredUsers
-                    .filter(user => isValidUserName(user.name))
-                    .map((user) => (
-                      <Button
-                        key={user.id}
-                        onClick={() => handleNameSelect(user.name)}
-                        className={`h-16 text-lg font-semibold justify-start transition-all duration-200 rounded-xl ${
-                          selectedName === user.name
-                            ? 'bg-green-500 hover:bg-green-600 text-white scale-105 shadow-lg'
-                            : 'bg-white border-2 border-slate-200 text-slate-700 hover:bg-green-50 hover:border-green-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-4 w-full">
-                          <div className={`w-4 h-4 rounded-full ${
-                            selectedName === user.name ? 'bg-white' : 'bg-green-500'
-                          }`}></div>
-                          <span className="flex-1 text-left">{user.name}</span>
-                          {selectedName === user.name && (
-                            <CheckCircle className="h-6 w-6" />
-                          )}
-                        </div>
-                      </Button>
-                    ))}
-                </div>
+                {/* Loading state */}
+                {usersLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-green-500" />
+                    <span className="ml-2 text-green-600">Carregando usuários...</span>
+                  </div>
+                ) : (
+                  <>
+                    {/* Lista de nomes */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-80 overflow-y-auto">
+                      {filteredUsers
+                        .filter(user => isValidUserName(user.name))
+                        .map((user) => (
+                          <Button
+                            key={user.id}
+                            onClick={() => handleNameSelect(user.name)}
+                            className={`h-16 text-lg font-semibold justify-start transition-all duration-200 rounded-xl ${
+                              selectedName === user.name
+                                ? 'bg-green-500 hover:bg-green-600 text-white scale-105 shadow-lg'
+                                : 'bg-white border-2 border-slate-200 text-slate-700 hover:bg-green-50 hover:border-green-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-4 w-full">
+                              <div className={`w-4 h-4 rounded-full ${
+                                selectedName === user.name ? 'bg-white' : 'bg-green-500'
+                              }`}></div>
+                              <span className="flex-1 text-left">{user.name}</span>
+                              {selectedName === user.name && (
+                                <CheckCircle className="h-6 w-6" />
+                              )}
+                            </div>
+                          </Button>
+                        ))}
+                    </div>
+
+                    {/* Mensagem quando não há usuários */}
+                    {users.length === 0 && !usersLoading && (
+                      <div className="text-center py-8">
+                        <p className="text-slate-600">
+                          {!isOnline && !hasCachedData 
+                            ? 'Sem conexão e nenhum cache de usuários disponível. Conecte-se à internet para carregar os usuários.'
+                            : 'Nenhum usuário encontrado neste grupo.'
+                          }
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 <div className="flex gap-4 justify-center mt-8">
                   <Button onClick={() => setEmployeeStep('group')} variant="outline" className="px-8 py-3 text-gray-600 hover:text-gray-800">
