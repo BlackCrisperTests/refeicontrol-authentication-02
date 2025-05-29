@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Clock, Coffee, Utensils, Search, CheckCircle, Users } from 'lucide-react';
+import { Clock, Coffee, Utensils, Search, CheckCircle, Users, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,10 +9,15 @@ import { MealType, User, SystemSettings } from '@/types/database.types';
 import DynamicGroupSelector from './DynamicGroupSelector';
 import MatriculaVerification from './MatriculaVerification';
 import VisitorFlow from './VisitorFlow';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { MealRecordService } from '@/services/mealRecordService';
 
 const PublicAccess = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
+  
+  // Hook para gerenciar sincronização offline
+  const { isOnline, isSyncing, pendingRecords, updatePendingCount } = useOfflineSync();
   
   // States for employee flow
   const [showEmployeeFlow, setShowEmployeeFlow] = useState(false);
@@ -249,17 +253,12 @@ const PublicAccess = () => {
         userId = selectedUserData.id;
       }
 
-      // Check if this user already registered this meal today
-      if (userId) {
+      // Check if this user already registered this meal today (apenas se online)
+      if (userId && isOnline) {
         const today = new Date().toISOString().split('T')[0];
-        const { data: existingRecord } = await supabase
-          .from('meal_records')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('meal_type', mealType)
-          .eq('meal_date', today);
-
-        if (existingRecord && existingRecord.length > 0) {
+        const isDuplicate = await MealRecordService.checkDuplicateRecord(userId, mealType, today);
+        
+        if (isDuplicate) {
           toast({
             title: "Registro duplicado",
             description: `Você já registrou ${mealType === 'breakfast' ? 'café da manhã' : 'almoço'} hoje.`,
@@ -270,27 +269,26 @@ const PublicAccess = () => {
         }
       }
 
-      // Create the meal record
-      const { error } = await supabase
-        .from('meal_records')
-        .insert({
-          user_id: userId,
-          user_name: userName,
-          group_id: selectedGroup,
-          group_type: selectedGroupName as any,
-          meal_type: mealType,
-          meal_date: new Date().toISOString().split('T')[0],
-          meal_time: currentTime.toTimeString().split(' ')[0]
-        });
+      // Criar o registro usando o novo serviço
+      const mealRecordData = {
+        user_id: userId,
+        user_name: userName,
+        group_id: selectedGroup,
+        group_type: selectedGroupName,
+        meal_type: mealType,
+        meal_date: new Date().toISOString().split('T')[0],
+        meal_time: currentTime.toTimeString().split(' ')[0]
+      };
 
-      if (error) {
-        throw error;
-      }
+      await MealRecordService.createMealRecord(mealRecordData, isOnline);
 
       toast({
         title: "Sucesso!",
         description: `${mealType === 'breakfast' ? 'Café da manhã' : 'Almoço'} registrado para ${userName}.`,
       });
+
+      // Atualizar contador de registros pendentes
+      updatePendingCount();
 
       // Reset form
       setShowEmployeeFlow(false);
@@ -298,10 +296,17 @@ const PublicAccess = () => {
     } catch (error: any) {
       console.error('Error registering meal:', error);
       toast({
-        title: "Erro ao registrar refeição",
-        description: error.message || "Por favor, tente novamente.",
-        variant: "destructive"
+        title: isOnline ? "Erro ao registrar refeição" : "Registrado offline",
+        description: error.message || (isOnline ? "Por favor, tente novamente." : "Será enviado quando a conexão for restabelecida."),
+        variant: isOnline ? "destructive" : "default"
       });
+
+      if (!isOnline) {
+        // Atualizar contador e resetar form mesmo quando offline
+        updatePendingCount();
+        setShowEmployeeFlow(false);
+        resetEmployeeFlow();
+      }
     } finally {
       setLoading(false);
     }
@@ -316,6 +321,8 @@ const PublicAccess = () => {
             onCancel={handleVisitorFlowCancel}
             currentTime={currentTime}
             systemSettings={systemSettings}
+            isOnline={isOnline}
+            updatePendingCount={updatePendingCount}
           />
         </div>
       </div>
@@ -350,13 +357,39 @@ const PublicAccess = () => {
                   <div className="bg-white/20 p-4 rounded-full">
                     <Utensils className="h-8 w-8" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <CardTitle className="text-2xl font-bold">FUNCIONÁRIO</CardTitle>
                     <p className="text-blue-100 text-lg">Selecione seu setor</p>
+                  </div>
+                  {/* Status de conexão */}
+                  <div className="flex items-center gap-2">
+                    {isOnline ? (
+                      <Wifi className="h-6 w-6 text-green-300" />
+                    ) : (
+                      <WifiOff className="h-6 w-6 text-red-300" />
+                    )}
+                    <span className="text-sm">
+                      {isOnline ? 'Online' : 'Offline'}
+                    </span>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-8">
+                {/* Indicador de registros pendentes */}
+                {pendingRecords > 0 && (
+                  <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-amber-800">
+                      <Loader2 className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                      <span className="text-sm">
+                        {isSyncing 
+                          ? 'Sincronizando registros...' 
+                          : `${pendingRecords} registro(s) pendente(s) de sincronização`
+                        }
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-6">
                   <h3 className="text-xl font-semibold text-gray-800 mb-6 text-center">
                     Onde você trabalha?
@@ -390,13 +423,39 @@ const PublicAccess = () => {
                   <div className="bg-white/20 p-4 rounded-full">
                     <Users className="h-8 w-8" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <CardTitle className="text-2xl font-bold">ENCONTRE SEU NOME</CardTitle>
                     <p className="text-green-100 text-lg">Setor: {selectedGroupName}</p>
+                  </div>
+                  {/* Status de conexão */}
+                  <div className="flex items-center gap-2">
+                    {isOnline ? (
+                      <Wifi className="h-6 w-6 text-green-300" />
+                    ) : (
+                      <WifiOff className="h-6 w-6 text-red-300" />
+                    )}
+                    <span className="text-sm">
+                      {isOnline ? 'Online' : 'Offline'}
+                    </span>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-8 space-y-6">
+                {/* Indicador de registros pendentes */}
+                {pendingRecords > 0 && (
+                  <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-amber-800">
+                      <Loader2 className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                      <span className="text-sm">
+                        {isSyncing 
+                          ? 'Sincronizando registros...' 
+                          : `${pendingRecords} registro(s) pendente(s) de sincronização`
+                        }
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Campo de busca */}
                 <div className="relative">
                   <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 text-slate-400 h-6 w-6 z-10" />
@@ -457,14 +516,48 @@ const PublicAccess = () => {
                   <div className="bg-white/20 p-4 rounded-full">
                     <Utensils className="h-8 w-8" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <CardTitle className="text-2xl font-bold">ESCOLHA SUA REFEIÇÃO</CardTitle>
                     <p className="text-orange-100 text-lg">Olá, {selectedName}!</p>
+                  </div>
+                  {/* Status de conexão */}
+                  <div className="flex items-center gap-2">
+                    {isOnline ? (
+                      <Wifi className="h-6 w-6 text-green-300" />
+                    ) : (
+                      <WifiOff className="h-6 w-6 text-red-300" />
+                    )}
+                    <span className="text-sm">
+                      {isOnline ? 'Online' : 'Offline'}
+                    </span>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-8">
+                {/* Indicador de registros pendentes */}
+                {pendingRecords > 0 && (
+                  <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-amber-800">
+                      <Loader2 className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                      <span className="text-sm">
+                        {isSyncing 
+                          ? 'Sincronizando registros...' 
+                          : `${pendingRecords} registro(s) pendente(s) de sincronização`
+                        }
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-6">
+                  {!isOnline && (
+                    <div className="text-center p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                      <p className="text-amber-800 font-medium">
+                        📱 Modo Offline - Seus registros serão salvos localmente e enviados quando a conexão voltar
+                      </p>
+                    </div>
+                  )}
+
                   <div className="text-center mb-6">
                     <p className="text-lg text-gray-600">
                       Setor: <span className="font-bold">{selectedGroupName}</span>
@@ -545,8 +638,38 @@ const PublicAccess = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
       <div className="max-w-5xl mx-auto">
-        {/* Header Mais Simples e Maior */}
-        <div className="text-center mb-16">
+        {/* Header com status de conexão */}
+        <div className="text-center mb-16 relative">
+          {/* Status de conexão no canto superior direito */}
+          <div className="absolute top-0 right-0 flex items-center gap-2 bg-white/80 backdrop-blur-sm p-3 rounded-xl shadow-md">
+            {isOnline ? (
+              <>
+                <Wifi className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium text-green-700">Online</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="h-5 w-5 text-red-600" />
+                <span className="text-sm font-medium text-red-700">Offline</span>
+              </>
+            )}
+          </div>
+
+          {/* Indicador de registros pendentes */}
+          {pendingRecords > 0 && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg max-w-2xl mx-auto">
+              <div className="flex items-center justify-center gap-2 text-amber-800">
+                <Loader2 className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span className="text-sm">
+                  {isSyncing 
+                    ? 'Sincronizando registros pendentes...' 
+                    : `${pendingRecords} registro(s) aguardando sincronização`
+                  }
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="relative inline-block mb-8">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-green-600 rounded-full blur-xl opacity-30 animate-pulse"></div>
             <div className="relative bg-white p-8 rounded-full shadow-2xl border-4 border-blue-100">
@@ -568,14 +691,19 @@ const PublicAccess = () => {
             </div>
           </div>
 
-          {/* Instruções Simples */}
+          {/* Instruções com indicação de modo offline */}
           <p className="text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
             Escolha se você é <span className="font-bold text-blue-600">FUNCIONÁRIO</span> ou 
             <span className="font-bold text-purple-600"> VISITANTE</span> para registrar sua refeição
+            {!isOnline && (
+              <span className="block mt-2 text-lg text-amber-600 font-medium">
+                📱 Modo Offline: Registros serão salvos localmente
+              </span>
+            )}
           </p>
         </div>
 
-        {/* Duas Opções Principais - MUITO GRANDES - FUNCIONÁRIO PRIMEIRO */}
+        {/* Duas Opções Principais - FUNCIONÁRIO PRIMEIRO */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           {/* Opção Funcionário - PRIMEIRO */}
           <Card className="shadow-2xl border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer" onClick={handleEmployeeFlowStart}>

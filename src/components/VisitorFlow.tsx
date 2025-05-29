@@ -1,24 +1,27 @@
-
 import React, { useState } from 'react';
-import { Clock, Coffee, Utensils, Users, Building, ChevronDown } from 'lucide-react';
+import { Clock, Coffee, Utensils, Users, Building, ChevronDown, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { MealType } from '@/types/database.types';
+import { MealRecordService } from '@/services/mealRecordService';
 
 interface VisitorFlowProps {
   onCancel: () => void;
   currentTime: Date;
   systemSettings: any;
+  isOnline: boolean;
+  updatePendingCount: () => void;
 }
 
 const VisitorFlow: React.FC<VisitorFlowProps> = ({
   onCancel,
   currentTime,
-  systemSettings
+  systemSettings,
+  isOnline,
+  updatePendingCount
 }) => {
   const [step, setStep] = useState<'area' | 'info' | 'meal'>('area');
   const [selectedArea, setSelectedArea] = useState<'operacao' | 'projetos' | null>(null);
@@ -172,37 +175,42 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
       // Format the user name as "Name | Company (Visitante)"
       const formattedUserName = `${visitorName} | ${finalCompanyName} (Visitante)`;
 
-      // Create the meal record for visitor
-      const { error } = await supabase
-        .from('meal_records')
-        .insert({
-          user_id: null,
-          user_name: formattedUserName,
-          group_id: null,
-          group_type: selectedArea as any,
-          meal_type: mealType,
-          meal_date: new Date().toISOString().split('T')[0],
-          meal_time: currentTime.toTimeString().split(' ')[0]
-        });
+      // Criar o registro usando o novo serviço
+      const mealRecordData = {
+        user_id: null,
+        user_name: formattedUserName,
+        group_id: null,
+        group_type: selectedArea,
+        meal_type: mealType,
+        meal_date: new Date().toISOString().split('T')[0],
+        meal_time: currentTime.toTimeString().split(' ')[0]
+      };
 
-      if (error) {
-        throw error;
-      }
+      await MealRecordService.createMealRecord(mealRecordData, isOnline);
 
       toast({
         title: "Sucesso!",
         description: `${mealType === 'breakfast' ? 'Café da manhã' : 'Almoço'} registrado para ${visitorName} da empresa ${finalCompanyName}.`
       });
 
+      // Atualizar contador de registros pendentes
+      updatePendingCount();
+
       // Reset and close
       onCancel();
     } catch (error: any) {
       console.error('Error registering visitor meal:', error);
       toast({
-        title: "Erro ao registrar refeição",
-        description: error.message || "Por favor, tente novamente.",
-        variant: "destructive"
+        title: isOnline ? "Erro ao registrar refeição" : "Registrado offline",
+        description: error.message || (isOnline ? "Por favor, tente novamente." : "Será enviado quando a conexão for restabelecida."),
+        variant: isOnline ? "destructive" : "default"
       });
+
+      if (!isOnline) {
+        // Atualizar contador e fechar mesmo quando offline
+        updatePendingCount();
+        onCancel();
+      }
     } finally {
       setLoading(false);
     }
@@ -216,14 +224,33 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
             <div className="bg-white/20 p-4 rounded-full">
               <Users className="h-8 w-8" />
             </div>
-            <div>
+            <div className="flex-1">
               <CardTitle className="text-2xl font-bold">VISITANTE</CardTitle>
               <p className="text-purple-100 text-lg">Selecione sua área de visita</p>
+            </div>
+            {/* Status de conexão */}
+            <div className="flex items-center gap-2">
+              {isOnline ? (
+                <Wifi className="h-6 w-6 text-green-300" />
+              ) : (
+                <WifiOff className="h-6 w-6 text-red-300" />
+              )}
+              <span className="text-sm">
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-8">
           <div className="space-y-4">
+            {!isOnline && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg mb-6">
+                <p className="text-amber-800 text-center font-medium">
+                  📱 Modo Offline - Seu registro será salvo localmente e enviado quando a conexão voltar
+                </p>
+              </div>
+            )}
+
             <h3 className="text-xl font-semibold text-gray-800 mb-6 text-center">
               Qual área você está visitando?
             </h3>
@@ -269,14 +296,33 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
             <div className="bg-white/20 p-4 rounded-full">
               <Users className="h-8 w-8" />
             </div>
-            <div>
+            <div className="flex-1">
               <CardTitle className="text-2xl font-bold">VISITANTE DE {selectedArea?.toUpperCase()}</CardTitle>
               <p className="text-orange-100 text-lg">Preencha suas informações</p>
+            </div>
+            {/* Status de conexão */}
+            <div className="flex items-center gap-2">
+              {isOnline ? (
+                <Wifi className="h-6 w-6 text-green-300" />
+              ) : (
+                <WifiOff className="h-6 w-6 text-red-300" />
+              )}
+              <span className="text-sm">
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-8">
           <div className="space-y-6">
+            {!isOnline && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-amber-800 text-center font-medium">
+                  📱 Modo Offline - Suas informações serão salvas localmente
+                </p>
+              </div>
+            )}
+
             <div>
               <label htmlFor="visitorName" className="block text-lg font-semibold text-gray-800 mb-3">
                 Seu nome completo:
@@ -361,14 +407,33 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
             <div className="bg-white/20 p-4 rounded-full">
               <Utensils className="h-8 w-8" />
             </div>
-            <div>
+            <div className="flex-1">
               <CardTitle className="text-2xl font-bold">ESCOLHA SUA REFEIÇÃO</CardTitle>
               <p className="text-green-100 text-lg">Olá, {visitorName}!</p>
+            </div>
+            {/* Status de conexão */}
+            <div className="flex items-center gap-2">
+              {isOnline ? (
+                <Wifi className="h-6 w-6 text-green-300" />
+              ) : (
+                <WifiOff className="h-6 w-6 text-red-300" />
+              )}
+              <span className="text-sm">
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-8">
           <div className="space-y-6">
+            {!isOnline && (
+              <div className="text-center p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-amber-800 font-medium">
+                  📱 Modo Offline - Sua refeição será registrada localmente e enviada quando a conexão voltar
+                </p>
+              </div>
+            )}
+
             <div className="text-center mb-6">
               <p className="text-lg text-gray-600">
                 <span className="font-bold">{finalCompanyName}</span> - Visitante de <span className="font-bold">{selectedArea === 'operacao' ? 'Operação' : 'Projetos'}</span>
@@ -388,7 +453,7 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
               >
                 <div className="flex items-center gap-4 w-full">
                   <div className={`p-4 rounded-2xl ${canRegisterBreakfast ? 'bg-white/20' : 'bg-slate-300'}`}>
-                    <Coffee className="h-12 w-12" />
+                    {loading ? <Loader2 className="h-12 w-12 animate-spin" /> : <Coffee className="h-12 w-12" />}
                   </div>
                   <div className="flex-1">
                     <div className="text-2xl font-black">CAFÉ DA MANHÃ</div>
@@ -415,7 +480,7 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
               >
                 <div className="flex items-center gap-4 w-full">
                   <div className={`p-4 rounded-2xl ${canRegisterLunch ? 'bg-white/20' : 'bg-slate-300'}`}>
-                    <Utensils className="h-12 w-12" />
+                    {loading ? <Loader2 className="h-12 w-12 animate-spin" /> : <Utensils className="h-12 w-12" />}
                   </div>
                   <div className="flex-1">
                     <div className="text-2xl font-black">ALMOÇO</div>
