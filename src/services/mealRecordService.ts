@@ -1,13 +1,13 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { OfflineCacheService } from './offlineCache';
-import { MealType } from '@/types/database.types';
+import { MealType, GroupType } from '@/types/database.types';
 
 export interface MealRecordData {
   user_id: string | null;
   user_name: string;
   group_id: string | null;
-  group_type: string;
+  group_type: GroupType;
   meal_type: MealType;
   meal_date: string;
   meal_time: string;
