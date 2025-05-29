@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types/database.types';
@@ -182,10 +182,33 @@ const UsersList = () => {
     (user.matricula && user.matricula.includes(searchTerm))
   );
 
+  // Group users by their groups
+  const groupedUsers = groups.reduce((acc, group) => {
+    const groupUsers = filteredUsers
+      .filter((user: any) => user.group_id === group.id)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    
+    if (groupUsers.length > 0) {
+      acc[group.id] = {
+        group,
+        users: groupUsers
+      };
+    }
+    
+    return acc;
+  }, {} as Record<string, { group: any; users: any[] }>);
+
+  // Users without a group
+  const usersWithoutGroup = filteredUsers
+    .filter((user: any) => !user.group_id)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const totalUsers = filteredUsers.length;
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Add User */}
+        {/* Add User Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -256,12 +279,12 @@ const UsersList = () => {
           </CardContent>
         </Card>
 
-        {/* Users List */}
+        {/* Users List - Updated with grouped accordion */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Lista de Usuários ({filteredUsers.length})
+              Lista de Usuários ({totalUsers})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -282,54 +305,121 @@ const UsersList = () => {
                   <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
                 </div>
               ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {filteredUsers.map((user: any) => (
-                    <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <div 
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: user.groups?.color || '#gray' }}
-                          />
-                          <div>
-                            <p className="font-medium">{user.name}</p>
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <span>{user.groups?.display_name || 'Sem grupo'}</span>
-                              {user.matricula && (
-                                <>
-                                  <span>•</span>
-                                  <span>Matrícula: {user.matricula}</span>
-                                </>
-                              )}
-                            </div>
-                            <p className={`text-xs ${user.active ? 'text-green-600' : 'text-red-600'}`}>
-                              {user.active ? 'Ativo' : 'Inativo'}
-                            </p>
+                <div className="max-h-96 overflow-y-auto">
+                  <Accordion type="multiple" className="w-full">
+                    {/* Groups with users */}
+                    {Object.entries(groupedUsers).map(([groupId, { group, users }]) => (
+                      <AccordionItem key={groupId} value={groupId}>
+                        <AccordionTrigger className="text-left">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: group.color }}
+                            />
+                            <span>{group.display_name}</span>
+                            <span className="text-sm text-gray-500">({users.length})</span>
                           </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleEditUser(user)}
-                          disabled={loading}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="destructive"
-                          onClick={() => handleDeleteUser(user.id, user.name)}
-                          disabled={loading}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-2 pl-4">
+                            {users.map((user: any) => (
+                              <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <div>
+                                      <p className="font-medium">
+                                        {user.matricula && (
+                                          <span className="text-blue-600 mr-2">#{user.matricula}</span>
+                                        )}
+                                        {user.name}
+                                      </p>
+                                      <p className={`text-xs ${user.active ? 'text-green-600' : 'text-red-600'}`}>
+                                        {user.active ? 'Ativo' : 'Inativo'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => handleEditUser(user)}
+                                    disabled={loading}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="destructive"
+                                    onClick={() => handleDeleteUser(user.id, user.name)}
+                                    disabled={loading}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+
+                    {/* Users without group */}
+                    {usersWithoutGroup.length > 0 && (
+                      <AccordionItem value="no-group">
+                        <AccordionTrigger className="text-left">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-gray-400" />
+                            <span>Sem Grupo</span>
+                            <span className="text-sm text-gray-500">({usersWithoutGroup.length})</span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-2 pl-4">
+                            {usersWithoutGroup.map((user: any) => (
+                              <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <div>
+                                      <p className="font-medium">
+                                        {user.matricula && (
+                                          <span className="text-blue-600 mr-2">#{user.matricula}</span>
+                                        )}
+                                        {user.name}
+                                      </p>
+                                      <p className={`text-xs ${user.active ? 'text-green-600' : 'text-red-600'}`}>
+                                        {user.active ? 'Ativo' : 'Inativo'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => handleEditUser(user)}
+                                    disabled={loading}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="destructive"
+                                    onClick={() => handleDeleteUser(user.id, user.name)}
+                                    disabled={loading}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
+                  </Accordion>
                   
-                  {filteredUsers.length === 0 && (
+                  {totalUsers === 0 && (
                     <p className="text-center py-4 text-gray-500">
                       {searchTerm ? 'Nenhum usuário encontrado para sua busca.' : 'Nenhum usuário encontrado.'}
                     </p>
