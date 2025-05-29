@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MealType, User, SystemSettings } from '@/types/database.types';
+import { MealType, User, SystemSettings, GroupType } from '@/types/database.types';
 import DynamicGroupSelector from './DynamicGroupSelector';
 import MatriculaVerification from './MatriculaVerification';
 import VisitorFlow from './VisitorFlow';
@@ -24,6 +24,7 @@ const PublicAccess = () => {
   const [employeeStep, setEmployeeStep] = useState<'group' | 'name' | 'meal'>('group');
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedGroupName, setSelectedGroupName] = useState<string>('');
+  const [selectedGroupType, setSelectedGroupType] = useState<GroupType | null>(null);
   const [selectedName, setSelectedName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState<User[]>([]);
@@ -152,6 +153,7 @@ const PublicAccess = () => {
   const resetEmployeeFlow = () => {
     setSelectedGroup(null);
     setSelectedGroupName('');
+    setSelectedGroupType(null);
     setSelectedName('');
     setSearchTerm('');
     setShowMatriculaVerification(false);
@@ -162,6 +164,21 @@ const PublicAccess = () => {
   const handleGroupSelect = (groupId: string, groupName: string) => {
     setSelectedGroup(groupId);
     setSelectedGroupName(groupName);
+    
+    // Get the group type from the users who belong to this group
+    // We'll fetch this when we load users, but for now we can map from group name
+    // This is a temporary solution - ideally we should fetch group data
+    const groupTypeMap: Record<string, GroupType> = {
+      'Operação': 'operacao',
+      'Projetos': 'projetos',
+      'PxA': 'pxa',
+      'Visitantes': 'visitantes'
+    };
+    
+    // Try to map the group name to group type, or use a default
+    const groupType = groupTypeMap[groupName] || 'operacao';
+    setSelectedGroupType(groupType);
+    
     setEmployeeStep('name');
   };
 
@@ -206,7 +223,7 @@ const PublicAccess = () => {
   };
 
   const handleMealRegistration = async (mealType: MealType) => {
-    if (!selectedGroup) {
+    if (!selectedGroup || !selectedGroupType) {
       toast({
         title: "Erro",
         description: "Por favor, selecione um grupo.",
@@ -274,7 +291,7 @@ const PublicAccess = () => {
         user_id: userId,
         user_name: userName,
         group_id: selectedGroup,
-        group_type: selectedGroupName,
+        group_type: selectedGroupType,
         meal_type: mealType,
         meal_date: new Date().toISOString().split('T')[0],
         meal_time: currentTime.toTimeString().split(' ')[0]
