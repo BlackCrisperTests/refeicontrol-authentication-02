@@ -570,30 +570,14 @@ const PublicAccess = () => {
 
           {/* Instruções Simples */}
           <p className="text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-            Escolha se você é <span className="font-bold text-purple-600">VISITANTE</span> ou 
-            <span className="font-bold text-blue-600"> FUNCIONÁRIO</span> para registrar sua refeição
+            Escolha se você é <span className="font-bold text-blue-600">FUNCIONÁRIO</span> ou 
+            <span className="font-bold text-purple-600"> VISITANTE</span> para registrar sua refeição
           </p>
         </div>
 
-        {/* Duas Opções Principais - MUITO GRANDES */}
+        {/* Duas Opções Principais - MUITO GRANDES - FUNCIONÁRIO PRIMEIRO */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {/* Opção Visitante */}
-          <Card className="shadow-2xl border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer" onClick={handleVisitorFlowStart}>
-            <CardContent className="p-12 text-center">
-              <div className="bg-white/20 p-8 rounded-full mx-auto mb-8 w-fit">
-                <Users className="h-16 w-16" />
-              </div>
-              <h2 className="text-4xl font-black mb-4">SOU VISITANTE</h2>
-              <p className="text-2xl text-purple-100 mb-8">
-                Estou visitando a empresa
-              </p>
-              <Button className="bg-white text-purple-600 hover:bg-purple-50 font-bold px-12 py-6 text-2xl h-auto rounded-2xl">
-                CLIQUE AQUI
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Opção Funcionário */}
+          {/* Opção Funcionário - PRIMEIRO */}
           <Card className="shadow-2xl border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer" onClick={handleEmployeeFlowStart}>
             <CardContent className="p-12 text-center">
               <div className="bg-white/20 p-8 rounded-full mx-auto mb-8 w-fit">
@@ -604,6 +588,22 @@ const PublicAccess = () => {
                 Trabalho na empresa
               </p>
               <Button className="bg-white text-blue-600 hover:bg-blue-50 font-bold px-12 py-6 text-2xl h-auto rounded-2xl">
+                CLIQUE AQUI
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Opção Visitante - SEGUNDO */}
+          <Card className="shadow-2xl border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white overflow-hidden hover:scale-105 transition-all duration-300 cursor-pointer" onClick={handleVisitorFlowStart}>
+            <CardContent className="p-12 text-center">
+              <div className="bg-white/20 p-8 rounded-full mx-auto mb-8 w-fit">
+                <Users className="h-16 w-16" />
+              </div>
+              <h2 className="text-4xl font-black mb-4">SOU VISITANTE</h2>
+              <p className="text-2xl text-purple-100 mb-8">
+                Estou visitando a empresa
+              </p>
+              <Button className="bg-white text-purple-600 hover:bg-purple-50 font-bold px-12 py-6 text-2xl h-auto rounded-2xl">
                 CLIQUE AQUI
               </Button>
             </CardContent>

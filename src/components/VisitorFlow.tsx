@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
-import { Clock, Coffee, Utensils, Users, Building } from 'lucide-react';
+import { Clock, Coffee, Utensils, Users, Building, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MealType } from '@/types/database.types';
@@ -21,8 +23,45 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
   const [step, setStep] = useState<'area' | 'info' | 'meal'>('area');
   const [selectedArea, setSelectedArea] = useState<'operacao' | 'projetos' | null>(null);
   const [visitorName, setVisitorName] = useState('');
-  const [visitorCompany, setVisitorCompany] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState('');
+  const [customCompany, setCustomCompany] = useState('');
+  const [showCustomCompany, setShowCustomCompany] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Lista de empresas padrão
+  const companies = [
+    'PETROBRÁS',
+    'VALE',
+    'BRASKEM',
+    'UNIPAR',
+    'SABESP',
+    'CEMIG',
+    'COPEL',
+    'ELETROBRAS',
+    'CSN',
+    'GERDAU',
+    'USIMINAS',
+    'JBS',
+    'BRF',
+    'MARFRIG',
+    'MINERVA',
+    'KLABIN',
+    'SUZANO',
+    'FIBRIA',
+    'ELDORADO',
+    'EMBRAER',
+    'WEG',
+    'RANDON',
+    'TUPY',
+    'MAHLE',
+    'CONTINENTAL',
+    'BOSCH',
+    'ZF',
+    'DANA',
+    'EATON',
+    'PARKER',
+    'Minha empresa não está na lista'
+  ];
 
   // Helper function to check if current time is within allowed range
   const isWithinTimeRange = (startTime: string | null, endTime: string) => {
@@ -37,13 +76,16 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
     const endTimeInMinutes = endHour * 60 + endMinute;
     return currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
   };
+
   const canRegisterBreakfast = systemSettings ? isWithinTimeRange(systemSettings.breakfast_start_time, systemSettings.breakfast_deadline) : false;
   const canRegisterLunch = systemSettings ? isWithinTimeRange(systemSettings.lunch_start_time, systemSettings.lunch_deadline) : false;
+
   const getBreakfastTimeRange = () => {
     if (!systemSettings) return 'Não configurado';
     const startTime = systemSettings.breakfast_start_time || '06:00';
     return `${startTime} às ${systemSettings.breakfast_deadline}`;
   };
+
   const getLunchTimeRange = () => {
     if (!systemSettings) return 'Não configurado';
     const startTime = systemSettings.lunch_start_time || '11:00';
@@ -53,6 +95,16 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
   const handleAreaSelect = (area: 'operacao' | 'projetos') => {
     setSelectedArea(area);
     setStep('info');
+  };
+
+  const handleCompanySelect = (value: string) => {
+    setSelectedCompany(value);
+    if (value === 'Minha empresa não está na lista') {
+      setShowCustomCompany(true);
+    } else {
+      setShowCustomCompany(false);
+      setCustomCompany('');
+    }
   };
 
   const handleInfoSubmit = () => {
@@ -65,7 +117,16 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
       return;
     }
     
-    if (!visitorCompany.trim()) {
+    if (!selectedCompany) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione uma empresa.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (showCustomCompany && !customCompany.trim()) {
       toast({
         title: "Erro",
         description: "Por favor, digite o nome da empresa.",
@@ -77,8 +138,15 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
     setStep('meal');
   };
 
+  const getFinalCompanyName = () => {
+    return showCustomCompany ? customCompany : selectedCompany;
+  };
+
   const handleMealRegistration = async (mealType: MealType) => {
-    if (!selectedArea || !visitorName.trim() || !visitorCompany.trim()) return;
+    if (!selectedArea || !visitorName.trim()) return;
+
+    const finalCompanyName = getFinalCompanyName();
+    if (!finalCompanyName.trim()) return;
 
     if (mealType === 'breakfast' && !canRegisterBreakfast) {
       toast({
@@ -102,7 +170,7 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
 
     try {
       // Format the user name as "Name | Company (Visitante)"
-      const formattedUserName = `${visitorName} | ${visitorCompany} (Visitante)`;
+      const formattedUserName = `${visitorName} | ${finalCompanyName} (Visitante)`;
 
       // Create the meal record for visitor
       const { error } = await supabase
@@ -123,7 +191,7 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
 
       toast({
         title: "Sucesso!",
-        description: `${mealType === 'breakfast' ? 'Café da manhã' : 'Almoço'} registrado para ${visitorName} da empresa ${visitorCompany}.`
+        description: `${mealType === 'breakfast' ? 'Café da manhã' : 'Almoço'} registrado para ${visitorName} da empresa ${finalCompanyName}.`
       });
 
       // Reset and close
@@ -224,17 +292,41 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
 
             <div>
               <label htmlFor="visitorCompany" className="block text-lg font-semibold text-gray-800 mb-3">
-                Nome da empresa:
+                Selecione sua empresa:
               </label>
-              <Input
-                id="visitorCompany"
-                placeholder="Digite o nome da sua empresa..."
-                value={visitorCompany}
-                onChange={(e) => setVisitorCompany(e.target.value)}
-                className="h-16 text-xl border-4 border-orange-200 hover:border-orange-300 transition-all duration-200 bg-orange-50 rounded-2xl"
-                onKeyPress={(e) => e.key === 'Enter' && handleInfoSubmit()}
-              />
+              <Select value={selectedCompany} onValueChange={handleCompanySelect}>
+                <SelectTrigger className="h-16 text-xl border-4 border-orange-200 hover:border-orange-300 transition-all duration-200 bg-orange-50 rounded-2xl">
+                  <SelectValue placeholder="Escolha sua empresa..." />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-2 border-orange-200 rounded-xl shadow-xl max-h-80">
+                  {companies.map((company) => (
+                    <SelectItem 
+                      key={company} 
+                      value={company}
+                      className="text-lg py-3 hover:bg-orange-50 cursor-pointer"
+                    >
+                      {company}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            {showCustomCompany && (
+              <div>
+                <label htmlFor="customCompany" className="block text-lg font-semibold text-gray-800 mb-3">
+                  Digite o nome da sua empresa:
+                </label>
+                <Input
+                  id="customCompany"
+                  placeholder="Nome da empresa..."
+                  value={customCompany}
+                  onChange={(e) => setCustomCompany(e.target.value)}
+                  className="h-16 text-xl border-4 border-orange-200 hover:border-orange-300 transition-all duration-200 bg-orange-50 rounded-2xl"
+                  onKeyPress={(e) => e.key === 'Enter' && handleInfoSubmit()}
+                />
+              </div>
+            )}
 
             <div className="flex gap-4 justify-center">
               <Button
@@ -247,7 +339,7 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
               
               <Button
                 onClick={handleInfoSubmit}
-                disabled={!visitorName.trim() || !visitorCompany.trim()}
+                disabled={!visitorName.trim() || !selectedCompany || (showCustomCompany && !customCompany.trim())}
                 className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white"
               >
                 Continuar
@@ -260,6 +352,8 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
   }
 
   if (step === 'meal') {
+    const finalCompanyName = getFinalCompanyName();
+    
     return (
       <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden animate-fade-in">
         <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white py-8">
@@ -277,7 +371,7 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
           <div className="space-y-6">
             <div className="text-center mb-6">
               <p className="text-lg text-gray-600">
-                <span className="font-bold">{visitorCompany}</span> - Visitante de <span className="font-bold">{selectedArea === 'operacao' ? 'Operação' : 'Projetos'}</span>
+                <span className="font-bold">{finalCompanyName}</span> - Visitante de <span className="font-bold">{selectedArea === 'operacao' ? 'Operação' : 'Projetos'}</span>
               </p>
             </div>
 
@@ -286,7 +380,7 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
               <Button
                 onClick={() => handleMealRegistration('breakfast')}
                 disabled={!canRegisterBreakfast || loading}
-                className={`h-32 flex flex-col gap-3 justify-center text-left transition-all duration-300 ${
+                className={`h-32 flex flex-col gap-3 justify-center text-left transition-all duration-300 rounded-3xl ${
                   canRegisterBreakfast 
                     ? 'bg-gradient-to-br from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white shadow-xl hover:shadow-2xl hover:scale-105' 
                     : 'bg-slate-200 cursor-not-allowed opacity-60 text-slate-500'
@@ -313,7 +407,7 @@ const VisitorFlow: React.FC<VisitorFlowProps> = ({
               <Button
                 onClick={() => handleMealRegistration('lunch')}
                 disabled={!canRegisterLunch || loading}
-                className={`h-32 flex flex-col gap-3 justify-center text-left transition-all duration-300 ${
+                className={`h-32 flex flex-col gap-3 justify-center text-left transition-all duration-300 rounded-3xl ${
                   canRegisterLunch 
                     ? 'bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl hover:scale-105' 
                     : 'bg-slate-200 cursor-not-allowed opacity-60 text-slate-500'
