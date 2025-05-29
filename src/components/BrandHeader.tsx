@@ -26,13 +26,25 @@ const BrandHeader: React.FC<BrandHeaderProps> = ({
           <div className="w-px h-12 bg-slate-300"></div>
           <div className="flex items-center">
             <img 
-              src="/lovable-uploads/56a93187-288c-427c-8201-6fe4029f0a83.png" 
+              src="/lovable-uploads/a0cb27d0-3b2e-4eff-a7cb-0ee6fc2ab745.png" 
               alt="RefeiControl - Sistema de Controle de Refeições" 
               className="h-20 w-auto"
             />
           </div>
         </div>
       )}
+      
+      {/* Logo BlackCrisper */}
+      <div className="flex items-center gap-4">
+        <div className="w-px h-12 bg-slate-300"></div>
+        <div className="flex items-center">
+          <img 
+            src="/lovable-uploads/2597f083-c6d0-4029-bbd5-01576df05870.png" 
+            alt="BlackCrisper" 
+            className="h-16 w-auto"
+          />
+        </div>
+      </div>
     </div>
   );
 };

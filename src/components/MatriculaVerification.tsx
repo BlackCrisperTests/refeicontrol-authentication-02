@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, X, CheckCircle } from 'lucide-react';
+import { ShieldCheck, X, CheckCircle, Backspace } from 'lucide-react';
 
 interface MatriculaVerificationProps {
   correctMatricula: string;
@@ -17,38 +17,30 @@ const MatriculaVerification: React.FC<MatriculaVerificationProps> = ({
   onVerificationSuccess,
   onCancel
 }) => {
-  const [options, setOptions] = useState<string[]>([]);
-  const [selectedMatricula, setSelectedMatricula] = useState<string>('');
+  const [inputMatricula, setInputMatricula] = useState<string>('');
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
 
-  useEffect(() => {
-    // Gerar duas matrículas aleatórias de 3 dígitos
-    const generateRandomMatricula = () => {
-      return Math.floor(100 + Math.random() * 900).toString();
-    };
+  const handleNumberClick = (number: string) => {
+    if (inputMatricula.length < 3) {
+      setInputMatricula(prev => prev + number);
+    }
+  };
 
-    const randomOptions = [generateRandomMatricula(), generateRandomMatricula()];
-    
-    // Garantir que as matrículas aleatórias sejam diferentes da correta
-    const filteredOptions = randomOptions.filter(option => option !== correctMatricula);
-    while (filteredOptions.length < 2) {
-      const newOption = generateRandomMatricula();
-      if (newOption !== correctMatricula && !filteredOptions.includes(newOption)) {
-        filteredOptions.push(newOption);
-      }
+  const handleBackspace = () => {
+    setInputMatricula(prev => prev.slice(0, -1));
+  };
+
+  const handleClear = () => {
+    setInputMatricula('');
+  };
+
+  const handleConfirm = () => {
+    if (inputMatricula.length !== 3) {
+      return;
     }
 
-    // Misturar as opções
-    const allOptions = [correctMatricula, ...filteredOptions.slice(0, 2)];
-    const shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
-    
-    setOptions(shuffledOptions);
-  }, [correctMatricula]);
-
-  const handleMatriculaSelect = (matricula: string) => {
-    setSelectedMatricula(matricula);
-    const correct = matricula === correctMatricula;
+    const correct = inputMatricula === correctMatricula;
     setIsCorrect(correct);
     setShowResult(true);
 
@@ -59,7 +51,7 @@ const MatriculaVerification: React.FC<MatriculaVerificationProps> = ({
     } else {
       setTimeout(() => {
         setShowResult(false);
-        setSelectedMatricula('');
+        setInputMatricula('');
       }, 2000);
     }
   };
@@ -99,7 +91,7 @@ const MatriculaVerification: React.FC<MatriculaVerificationProps> = ({
           </div>
           <div>
             <CardTitle className="text-2xl font-bold">VERIFICAÇÃO DE MATRÍCULA</CardTitle>
-            <p className="text-blue-100 text-lg">Selecione sua matrícula para continuar</p>
+            <p className="text-blue-100 text-lg">Digite sua matrícula para continuar</p>
           </div>
         </div>
       </CardHeader>
@@ -110,21 +102,72 @@ const MatriculaVerification: React.FC<MatriculaVerificationProps> = ({
               Olá, {userName}!
             </h3>
             <p className="text-gray-600">
-              Para confirmar sua identidade, selecione sua matrícula:
+              Para confirmar sua identidade, digite sua matrícula:
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            {options.map((matricula, index) => (
+          {/* Campo de exibição da matrícula */}
+          <div className="flex justify-center">
+            <div className="bg-slate-50 border-2 border-slate-300 rounded-lg p-6 min-w-[200px]">
+              <div className="flex justify-center gap-3">
+                {[0, 1, 2].map((index) => (
+                  <div
+                    key={index}
+                    className="w-16 h-16 bg-white border-2 border-slate-300 rounded-lg flex items-center justify-center text-3xl font-bold text-slate-700"
+                  >
+                    {inputMatricula[index] || ''}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Teclado numérico */}
+          <div className="grid grid-cols-3 gap-4 max-w-xs mx-auto">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((number) => (
               <Button
-                key={index}
-                onClick={() => handleMatriculaSelect(matricula)}
-                className="h-16 text-xl font-bold bg-white border-2 border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
-                disabled={selectedMatricula !== ''}
+                key={number}
+                onClick={() => handleNumberClick(number.toString())}
+                className="h-16 text-2xl font-bold bg-white border-2 border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+                disabled={inputMatricula.length >= 3}
               >
-                {matricula}
+                {number}
               </Button>
             ))}
+            
+            {/* Linha inferior do teclado */}
+            <Button
+              onClick={handleClear}
+              className="h-16 text-lg font-bold bg-red-50 border-2 border-red-300 text-red-600 hover:bg-red-100 hover:border-red-400 transition-all duration-200"
+            >
+              C
+            </Button>
+            
+            <Button
+              onClick={() => handleNumberClick('0')}
+              className="h-16 text-2xl font-bold bg-white border-2 border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+              disabled={inputMatricula.length >= 3}
+            >
+              0
+            </Button>
+            
+            <Button
+              onClick={handleBackspace}
+              className="h-16 font-bold bg-orange-50 border-2 border-orange-300 text-orange-600 hover:bg-orange-100 hover:border-orange-400 transition-all duration-200"
+            >
+              <Backspace className="h-6 w-6" />
+            </Button>
+          </div>
+
+          {/* Botão OK */}
+          <div className="flex justify-center">
+            <Button
+              onClick={handleConfirm}
+              disabled={inputMatricula.length !== 3}
+              className="px-12 py-4 text-xl font-bold bg-green-500 hover:bg-green-600 text-white disabled:bg-gray-300 disabled:text-gray-500"
+            >
+              OK
+            </Button>
           </div>
 
           <div className="flex justify-center">
